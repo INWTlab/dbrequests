@@ -1,0 +1,11 @@
+# Python files
+*.pys
+*.ipynb
+
+# Code Coverage
+*.coverage
+
+# Python packaging files
+pydbtools.egg-info
+.pytest_cache
+__pycache__

@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pymysql = "*"
+e1839a8 = {path = ".",editable = true}
+pydbtools = {path = ".",editable = true}
+
+[dev-packages]
+pytest = "*"
+pydbtools = {path = ".",editable = true}
+
+[requires]
+python_version = "3.5"
