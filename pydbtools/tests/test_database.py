@@ -10,9 +10,9 @@ creds = {
     'db': 'test'
 }
 url = ("mysql+pymysql://{}:{}@{}/{}".format(creds['user'], creds['password'], creds['host'], creds['db']))
+sql_dir = os.path.join(os.getcwd(), 'pydbtools/tests/sql')
 sql_dir = os.path.join(os.path.dirname(__file__), 'sql')
 
-sql_dir = os.path.join(os.getcwd(), 'pydbtools/tests/sql')
 
 class TestDatabase:
     def test_send_query_create(self):
@@ -78,7 +78,7 @@ class TestDatabase:
     def test_create_insert_file_param(self):
         db = Database(creds=creds)
         db.send_bulk_query(os.path.join(sql_dir, 'create.sql'))
-        db.send_bulk_query(os.path.join(sql_dir, 'insert.sql'))
+        db.send_bulk_query(os.path.join(sql_dir, 'insert_param.sql'), table='cats')
         df = db.send_query(os.path.join(sql_dir, 'select_param.sql'),
                             col1='name', col2='id', index_col='id')
         db.send_bulk_query(os.path.join(sql_dir, 'drop.sql'))

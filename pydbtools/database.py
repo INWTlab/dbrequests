@@ -118,11 +118,11 @@ class Database(object):
         with self.get_connection() as conn:
             return conn.query(query, **params)
 
-    def bulk_query(self, query, *multiparams):
+    def bulk_query(self, query, **params):
         """Bulk insert or update."""
 
         with self.get_connection() as conn:
-            conn.bulk_query(query, *multiparams)
+            conn.bulk_query(query, **params)
 
     def query_file(self, path, **params):
         """Like Database.query, but takes a filename to load a query from."""
@@ -130,11 +130,11 @@ class Database(object):
         with self.get_connection() as conn:
             return conn.query_file(path, **params)
 
-    def bulk_query_file(self, path, *multiparams):
+    def bulk_query_file(self, path, **params):
         """Like Database.bulk_query, but takes a filename to load a query from."""
 
         with self.get_connection() as conn:
-            conn.bulk_query_file(path, *multiparams)
+            conn.bulk_query_file(path, **params)
 
     @contextmanager
     def transaction(self):

@@ -34,10 +34,10 @@ class Connection(object):
 
         return results
 
-    def bulk_query(self, query, *multiparams):
+    def bulk_query(self, query, **params):
         """Bulk insert or update."""
 
-        self._conn.execute(text(query), *multiparams)
+        self._conn.execute(text(query), **params)
 
     def query_file(self, path, **params):
         """Like Connection.query, but takes a filename to load a query from."""
@@ -58,7 +58,7 @@ class Connection(object):
         # Defer processing to self.query method.
         return self.query(query=query, **params)
 
-    def bulk_query_file(self, path, *multiparams):
+    def bulk_query_file(self, path, **params):
         """Like Connection.bulk_query, but takes a filename to load a query
         from.
         """
@@ -74,8 +74,36 @@ class Connection(object):
         # Read the given .sql file into memory.
         with open(path) as f:
             query = f.read()
+        query = query.format(**params)
+        params = {k: v for k, v in params.items() if k in inspect.getfullargspec(self._conn.execute).args}
+        self._conn.execute(text(query), **params)
 
-        self._conn.execute(text(query), *multiparams)
+    def send_data(self, df, table, mode='insert', **params):
+        """Sends data to table in database. If the table already exists, different modes of
+        insertion are provided.
+
+        Args:
+            - df (pandas DataFrame): DataFrame.
+            - table_name (str): Name of SQL table.
+            - mode ({'insert', 'truncate', 'replace', 'update'}): Mode of Data Insertion. Defaults to 'insert'.
+                - 'insert': appends data. If there are duplicates in the primary keys, a sql-error is returned.
+                - 'truncate': replaces the complete table.
+                - 'replace': replaces duplicate primary keys
+                - 'update': updates duplicate primary keys
+        """
+
+        if mode == 'insert':
+            self._send_data_pandas(df, table, pandas_mode='append', **params)
+        elif mode == 'truncate':
+            self._send_data_pandas(df, table, pandas_mode='replace', **params)
+        else:
+            raise ValueError('{} is not a known mode.'.format(mode))
+        return 'Data successful sent.'
+
+    def _send_data_pandas(self, df, table, pandas_mode='append', **params):
+        """Uses the pandas-method to_sql to send data."""
+
+        df.to_sql(table, self._conn, if_exists=pandas_mode, index=False, **params)
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``
