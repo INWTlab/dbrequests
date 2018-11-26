@@ -96,6 +96,8 @@ class Connection(object):
             self._send_data_pandas(df, table, pandas_mode='append', **params)
         elif mode == 'truncate':
             self._send_data_pandas(df, table, pandas_mode='replace', **params)
+        elif mode in ['replace', 'update']:
+            self._send_data_update(df, table, mode, **params)
         else:
             raise ValueError('{} is not a known mode.'.format(mode))
         return 'Data successful sent.'
@@ -104,6 +106,28 @@ class Connection(object):
         """Uses the pandas-method to_sql to send data."""
 
         df.to_sql(table, self._conn, if_exists=pandas_mode, index=False, **params)
+
+    def _send_data_update(self, df, table, mode = 'replace', **params):
+        """Insert and replaces or updates the existing records via a temporary table."""
+        df.to_sql('temporary_table_pydbtools', self._conn, if_exists='fail', index=False, **params)
+        if mode == 'replace':
+            query = """REPLACE INTO {table}
+                SELECT * FROM temporary_table_pydbtools;""".format(table=table)
+        elif mode == 'update':
+            query = """INSERT INTO {table} ({columns})
+                SELECT {columns} FROM temporary_table_pydbtools
+                ON DUPLICATE KEY UPDATE {update};""".format(
+                table=table,
+                columns=', '.join(df.columns),
+                update=", ".join(["{name}=VALUES({name})".format(name=name)
+                     for name in df.columns]))
+            print(query)
+        try:
+            self.bulk_query(query)
+        except Exception as e:
+            self.bulk_query("DROP TABLE temporary_table_pydbtools;")
+            raise e
+        self.bulk_query("DROP TABLE temporary_table_pydbtools;")
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``
