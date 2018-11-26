@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine, inspect, exc
 from contextlib import contextmanager
 from .connection import Connection
+from pandas import DataFrame
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 class Database(object):
@@ -71,7 +72,8 @@ class Database(object):
         """Convenience wrapper for executing a SQL-query as string or a SQL-file. Parameters can,
         optionally, be provided to the sql-file and to pandas.read_sql. Returns a pandas DataFrame.
 
-        parameter query may be:
+        Args:
+        - query (str): query may be:
             - a sql query as string
             - a file-path as string
             - the name of a file as string (with or without .sql)
@@ -94,7 +96,8 @@ class Database(object):
         as string or a SQL-file. Parameters can, optionally, be provided to the sql-file and to pandas.read_sql.
         Returns nothing.
 
-        parameter query may be:
+        Args:
+        - query (str): query may be:
             - a sql query as string
             - a file-path as string
             - the name of a file as string (with or without .sql)
@@ -110,6 +113,24 @@ class Database(object):
                 self.bulk_query_file(query, **params)
         else:
             self.bulk_query(query, **params)
+
+    def send_data(self, df, table, mode='insert', **params):
+        """Sends data to table in database. If the table already exists, different modes of
+        insertion are provided.
+
+        Args:
+            - df (pandas DataFrame): DataFrame.
+            - table_name (str): Name of SQL table.
+            - mode ({'insert', 'truncate', 'replace', 'update'}): Mode of Data Insertion. Defaults to 'insert'.
+                - 'insert': appends data. If there are duplicates in the primary keys, a sql-error is returned.
+                - 'truncate': replaces the complete table.
+                - 'replace': replaces duplicate primary keys
+                - 'update': updates duplicate primary keys
+        """
+        if not isinstance(df, DataFrame):
+            raise TypeError('df has to be a pandas DataFrame.')
+        with self.get_connection() as conn:
+            return conn.send_data(df, table, mode, **params)
 
     def query(self, query, **params):
         """Executes the given SQL query against the Database via pandas. Parameters can,
