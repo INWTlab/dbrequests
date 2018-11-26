@@ -73,3 +73,7 @@ Supported modes are:
 - Database.get_table_names will give existing tables in the database
 - Parameters such es `chunksize` for `pandas.to_sql` may be given to the wrapper function `send_data` and is handed over to pandas. The same is true for `send_query`.
 - For transactions the context manager `transaction` may be of use.
+
+## Installation
+
+The package can be installed via pip.
