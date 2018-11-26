@@ -53,3 +53,23 @@ You can also send queries with no table Output to the database via `send_bulk_qu
 ```python
 db.send_bulk_query('drop test from test;')
 ```
+
+### Send data
+
+Easy sending of pandas Dataframes in multiple modes:
+
+```python
+db.send_data(df, 'table', mode='insert')
+```
+
+Supported modes are:
+  - 'insert': Appending new records. Duplicate primary keys will result in errors (sql insert into).
+  - 'truncate': Delete the table and completely rewrite it (sql truncate and insert into).
+  - 'replace': Replace records with duplicate primary keys (sql replace into).
+  - 'update': Update records with duplicate primary keys (sql insert into duplicate key update).
+
+### Uitilities
+
+- Database.get_table_names will give existing tables in the database
+- Parameters such es `chunksize` for `pandas.to_sql` may be given to the wrapper function `send_data` and is handed over to pandas. The same is true for `send_query`.
+- For transactions the context manager `transaction` may be of use.
