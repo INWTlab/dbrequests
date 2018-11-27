@@ -33,8 +33,8 @@ SELECT {col1}, {col2} FROM test;
 ```python
 from pydbtools import Database
 
-db = Database(creds=creds, sql_dir = '/path/to/dir/', col1='id', col2='name')
-db.send_query('select')
+db = Database(creds=creds, sql_dir = '/path/to/dir/')
+db.send_query('select', col1='id', col2='name')
 df # table test, including columns 'id', 'name' as pandas DataFrame
 ```
 
@@ -43,8 +43,8 @@ You can also pass arguments to pandas `read_sql`-Function:
 ```python
 from pydbtools import Database
 
-db = Database(creds=creds, sql_dir = '/path/to/dir/', col1='id', col2='name', index_col='d')
-db.send_query('select')
+db = Database(creds=creds, sql_dir = '/path/to/dir/')
+db.send_query('select', col1='id', col2='name', index_col='d')
 df # table test, including column 'name' as pandas DataFrame with index 'id'
 ```
 
