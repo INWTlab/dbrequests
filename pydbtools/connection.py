@@ -31,7 +31,6 @@ class Connection(object):
         # Execute the given query.
         params = {k: v for k, v in params.items() if k in inspect.getfullargspec(read_sql).args}
         results = read_sql(query, self._conn, **params)
-
         return results
 
     def bulk_query(self, query, **params):
@@ -109,25 +108,25 @@ class Connection(object):
 
     def _send_data_update(self, df, table, mode = 'replace', **params):
         """Insert and replaces or updates the existing records via a temporary table."""
-        df.to_sql('temporary_table_pydbtools', self._conn, if_exists='fail', index=False, **params)
-        if mode == 'replace':
-            query = """REPLACE INTO {table}
-                SELECT * FROM temporary_table_pydbtools;""".format(table=table)
-        elif mode == 'update':
-            query = """INSERT INTO {table} ({columns})
-                SELECT {columns} FROM temporary_table_pydbtools
-                ON DUPLICATE KEY UPDATE {update};""".format(
-                table=table,
-                columns=', '.join(df.columns),
-                update=", ".join(["{name}=VALUES({name})".format(name=name)
-                     for name in df.columns]))
-            print(query)
+        self.bulk_query("CREATE TEMPORARY TABLE temporary_table_pydbtools LIKE {}".format(table))
         try:
+            df.to_sql('temporary_table_pydbtools', self._conn, if_exists='append', index=False, **params)
+            if mode == 'replace':
+                query = """REPLACE INTO {table}
+                    SELECT * FROM temporary_table_pydbtools;""".format(table=table)
+            elif mode == 'update':
+                query = """INSERT INTO {table} ({columns})
+                    SELECT {columns} FROM temporary_table_pydbtools
+                    ON DUPLICATE KEY UPDATE {update};""".format(
+                    table=table,
+                    columns=', '.join(df.columns),
+                    update=", ".join(["{name}=VALUES({name})".format(name=name)
+                         for name in df.columns]))
             self.bulk_query(query)
+            self.bulk_query("DROP TEMPORARY TABLE temporary_table_pydbtools;")
         except Exception as e:
-            self.bulk_query("DROP TABLE temporary_table_pydbtools;")
-            raise e
-        self.bulk_query("DROP TABLE temporary_table_pydbtools;")
+            self.bulk_query("DROP TEMPORARY TABLE temporary_table_pydbtools;")
+            raise(e)
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``

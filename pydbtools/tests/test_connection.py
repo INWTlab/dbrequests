@@ -157,7 +157,6 @@ class TestConnection:
         df_out = con.query("""
             SELECT * FROM cats;
             """)
-        df_out
         con.bulk_query("""
             DROP TABLE cats;
             """)
@@ -188,6 +187,8 @@ class TestConnection:
         df_replace = pd.DataFrame({'id': [1, 4], 'name': ['Chill', 'Pi'],
                                    'owner': ['Alex', 'Matt'], 'birth':['2018-03-03', '2019-08-05']}, index = [0, 1])
         con.send_data(df_replace, 'cats', mode='update')
+        # con.query('select * from temporary_table_pydbtools;')
+        # con.bulk_query('drop temporary table temporary_table_pydbtools;')
         df_replace_small = pd.DataFrame({'id': [2], 'birth': ['2014-11-13']}, index=[0])
         con.send_data(df_replace_small, 'cats', mode='update')
         df_out = con.query("""
@@ -197,6 +198,7 @@ class TestConnection:
             DROP TABLE cats;
             """)
         df_out.birth = df_out.birth.astype(str)
+        con.close()
         assert (pd.DataFrame({'id': [1, 2, 3, 4],
                               'name': ['Chill', 'Cookie', 'Charlie', 'Pi'],
                               'owner': ['Alex', 'Casey', 'River', 'Matt'],
