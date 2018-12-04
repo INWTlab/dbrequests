@@ -31,7 +31,6 @@ class Database(object):
                 dialect = creds.get('dialect', 'mysql')
                 driver = creds.get('driver', 'pymysql')
                 self.db_url = '{}+{}://{}:{}@{}/{}'.format(dialect, driver, user, password, host, db)
-                print(self.db_url)
             except:
                 raise ValueError('You must provide a db_url or proper creds.')
 
