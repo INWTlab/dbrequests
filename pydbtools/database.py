@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, inspect, exc
 from contextlib import contextmanager
 from .connection import Connection
 from pandas import DataFrame
-DATABASE_URL = os.environ.get('DATABASE_URL')
 
 class Database(object):
     """A Database. Encapsulates a url and an SQLAlchemy engine with a pool of
@@ -20,7 +19,7 @@ class Database(object):
 
     def __init__(self, db_url=None, creds=None, sql_dir=None, **kwargs):
         # If no db_url was provided, fallback to $DATABASE_URL.
-        self.db_url = db_url or DATABASE_URL
+        self.db_url = db_url
         self.sql_dir = sql_dir or os.getcwd()
         if not self.db_url:
             try:

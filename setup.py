@@ -40,14 +40,14 @@ class PublishCommand(Command):
         self.status('Building Source and Wheel (universal) distribution...')
         os.system('{} setup.py sdist bdist_wheel --universal'.format(sys.executable))
 
-        self.status('Uploading the package to PyPi via Twine...')
-        os.system('twine upload dist/*')
+        self.status('Uploading the package to private PyPi via Twine...')
+        os.system('twine upload --repository-url http://pypi.inwt.de:9999 dist/*')
 
         sys.exit()
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.0.1'
+version = '1.0.4'
 
 
 def read(f):
@@ -61,7 +61,7 @@ setup(
     author='Matthaeus Deutsch',
     author_email='matthaeus.deutsch@inwt-statistics.de',
     url='https://github.com/INWT/pydbtools',
-    py_modules=['pydbtools'],
+    packages=['pydbtools'],
     package_data={'': ['LICENSE'],
                   'pydbtools': ['sql/*', 'tests/*']},
     install_requires=requires,
@@ -70,10 +70,9 @@ setup(
         'redshift': ['sqlalchemy-redshift', 'psycopg2'],
         'mysql': ['pymysql']
     },
-    license='ISC',
-    zip_safe=False,
+    license='MIT',
     classifiers=(
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python',
