@@ -48,7 +48,7 @@ db.send_query('select', col1='id', col2='name', index_col='id')
 df # table test, including column 'name' as pandas DataFrame with index 'id'
 ```
 
-You can also send queries with no table Output to the database via `send_bulk_query`, which exhibits the same behavior ar `send_query`:
+You may also send queries with no table as output to the database via `send_bulk_query`, which exhibits the same behavior as `send_query`:
 
 ```python
 db.send_bulk_query('drop test from test;')
@@ -71,7 +71,7 @@ Supported modes are:
 ### Uitilities
 
 - Database.get_table_names will give existing tables in the database
-- Parameters such es `chunksize` for `pandas.to_sql` may be given to the wrapper function `send_data` and is handed over to pandas. The same is true for `send_query`.
+- Parameters such es `chunksize` for `pandas.to_sql` may be given to the wrapper function `send_data` and are handed over to pandas. The same is true for `send_query`.
 - For transactions the context manager `transaction` may be of use.
 
 ## Installation
@@ -80,5 +80,4 @@ The package can be installed via pip:
 
 ```
 pip install pydbtools --extra-index-url http://pypi.inwt.de:9999
-
 ```
