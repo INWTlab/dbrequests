@@ -76,4 +76,9 @@ Supported modes are:
 
 ## Installation
 
-The package can be installed via pip.
+The package can be installed via pip:
+
+```
+pip install pydbtools --extra-index-url http://pypi.inwt.de:9999
+
+```
