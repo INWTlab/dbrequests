@@ -44,7 +44,7 @@ You can also pass arguments to pandas `read_sql`-Function:
 from pydbtools import Database
 
 db = Database(creds=creds, sql_dir = '/path/to/dir/')
-db.send_query('select', col1='id', col2='name', index_col='d')
+db.send_query('select', col1='id', col2='name', index_col='id')
 df # table test, including column 'name' as pandas DataFrame with index 'id'
 ```
 
