@@ -92,7 +92,7 @@ def con(request):
     url, container = run_docker_container()
     engine = create_engine(url)
     try:
-        time.sleep(10)
+        time.sleep(15)
         con = pydbtools.Connection(engine.connect())
         yield con  # providing fixture value for a test case
         # tear_down
