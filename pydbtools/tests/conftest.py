@@ -69,7 +69,7 @@ def db(request):
     """
     url, container = run_docker_container()
     try:
-        time.sleep(10)
+        time.sleep(15)
         db = pydbtools.Database(url, sql_dir=sql_dir)
         yield db  # providing fixture value for a test case
         # tear_down
