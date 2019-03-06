@@ -5,13 +5,14 @@ import os
 import sys
 from codecs import open
 from shutil import rmtree
+from distutils.command.register import register as register_orig
+from distutils.command.upload import upload as upload_orig
 
 from setuptools import setup, Command
 
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = '\n' + f.read()
-
 
 class PublishCommand(Command):
     """Support setup.py publish."""
@@ -37,17 +38,17 @@ class PublishCommand(Command):
         except FileNotFoundError:
             pass
 
-        self.status('Building Source and Wheel (universal) distribution...')
-        os.system('{} setup.py sdist bdist_wheel --universal'.format(sys.executable))
+        self.status('Building Source and Wheel distribution...')
+        os.system('{} setup.py sdist bdist_wheel'.format(sys.executable))
 
         self.status('Uploading the package to private PyPi via Twine...')
-        os.system('twine upload --repository-url http://pypi.inwt.de:9999 dist/*')
+        os.system('twine upload -r internal dist/* --config-file .pypirc --verbose --skip-existing')
 
         sys.exit()
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.0.5'
+version = '1.0.6'
 
 
 def read(f):
@@ -72,9 +73,10 @@ setup(
     },
     license='MIT',
     classifiers=(
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Natural Language :: English',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',

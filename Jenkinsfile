@@ -22,5 +22,15 @@ pipeline {
                 '''
             }
         }
+        stage('Deployment') {
+            // publish the package - needs the proper publish command within setup.py
+            withCredentials([file(credentialsId: '.pypirc', variable: 'PYPIRC')])
+            steps {
+                sh '''
+                cp -f $PYPIRC .
+                pipenv run python setup.py publish --verbose
+                '''
+            }
+        }
     }
 }
