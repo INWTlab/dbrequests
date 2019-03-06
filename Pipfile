@@ -9,6 +9,7 @@ e1839a8 = {path = ".",editable = true}
 pydbtools = {path = ".",editable = true}
 pandas = "*"
 ipykernel = "*"
+twine = "*"
 
 [dev-packages]
 pytest = "*"
