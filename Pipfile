@@ -7,10 +7,13 @@ name = "pypi"
 pymysql = "*"
 e1839a8 = {path = ".",editable = true}
 pydbtools = {path = ".",editable = true}
+pandas = "*"
+ipykernel = "*"
 
 [dev-packages]
 pytest = "*"
 pydbtools = {path = ".",editable = true}
+docker = "*"
 
 [requires]
 python_version = "3.5"
