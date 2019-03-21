@@ -1,6 +1,9 @@
 language: python
 python:
   - "3.6"
+# setup
+setup:
+  - pip install pipenv
 # command to install dependencies
 install:
   - pipenv install --dev
