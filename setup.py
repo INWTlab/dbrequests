@@ -5,8 +5,6 @@ import os
 import sys
 from codecs import open
 from shutil import rmtree
-from distutils.command.register import register as register_orig
-from distutils.command.upload import upload as upload_orig
 
 from setuptools import setup, Command
 
