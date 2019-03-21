@@ -76,8 +76,10 @@ Supported modes are:
 
 ## Installation
 
-The package can be installed via pip and INWTs private repository:
+The package can be installed via pip:
 
 ```
-pip install pydbtools --extra-index-url http://pypi.inwt.de:9999 --trusted-host pypi.inwt.de
+pip install git+https://github.com/INWTlab/pydbtools.git
 ```
+
+Publication on pypi will soon follow.
