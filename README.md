@@ -1,5 +1,7 @@
 # pydbtools
 
+[![Build Status](https://travis-ci.org/INWTlab/pydbtools.svg?branch=master)](https://travis-ci.org/INWTlab/pydbtools)
+
 **pydbtools is a python package built for easy use of raw SQL within python and pandas projects.**
 
 It uses ideas from [records](https://github.com/kennethreitz/records/) and is built using [sqlalchemy-engines](https://www.sqlalchemy.org/), but is more heavily integrated with pandas. It aims to reproduce the pilosophy behind the R-package [dbtools](https://github.com/INWT/dbtools/).
@@ -83,4 +85,3 @@ pip install git+https://github.com/INWTlab/pydbtools.git
 ```
 
 Publication on pypi will soon follow.
-
