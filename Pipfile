@@ -15,6 +15,3 @@ twine = "*"
 pytest = "*"
 pydbtools = {path = ".",editable = true}
 docker = "*"
-
-[requires]
-python_version = "3.6"

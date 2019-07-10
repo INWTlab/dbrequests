@@ -46,23 +46,23 @@ class PublishCommand(Command):
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.0.7'
+version = '1.0.8'
 
 
 def read(f):
     return open(f, encoding='utf-8').read()
 
 setup(
-    name='pydbtools',
+    name='dbrequests',
     version=version,
     description='Python package for querying and connecting to databases.',
     long_description=read('README.md') + '\n\n' + read('HISTORY.md'),
     author='Matthaeus Deutsch',
     author_email='matthaeus.deutsch@inwt-statistics.de',
-    url='https://github.com/INWT/pydbtools',
-    packages=['pydbtools'],
+    url='https://github.com/INWT/dbrequests',
+    packages=['dbrequests'],
     package_data={'': ['LICENSE'],
-                  'pydbtools': ['sql/*', 'tests/*']},
+                  'dbrequests': ['sql/*', 'tests/*']},
     install_requires=requires,
     extras_require={
         'pg': ['psycopg2'],
@@ -80,6 +80,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ),
     cmdclass={
         'publish': PublishCommand,

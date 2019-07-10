@@ -1,13 +1,13 @@
 """Shared pytest fixtures.
 """
 import pytest
-import pydbtools
+import dbrequests
 import os
 from sqlalchemy import create_engine
 from docker import from_env
 import time
 
-sql_dir = os.path.join(os.getcwd(), 'pydbtools/tests/sql')
+sql_dir = os.path.join(os.getcwd(), 'dbrequests/tests/sql')
 sql_dir = os.path.join(os.path.dirname(__file__), 'sql')
 
 def run_docker_container():
@@ -60,7 +60,7 @@ def set_up_table(db):
 
 @pytest.fixture(scope="module")
 def db(request):
-    """Instance of `pydbtools.Database(dburl)`
+    """Instance of `dbrequests.Database(dburl)`
     Ensure, it gets closed after being used in a test or fixture.
     Parametrized with (sql_url_id, sql_url_template) tuple.
     If `sql_url_template` contains `{dbfile}` it is replaced with path to a
@@ -70,7 +70,7 @@ def db(request):
     url, container = run_docker_container()
     try:
         time.sleep(15)
-        db = pydbtools.Database(url, sql_dir=sql_dir)
+        db = dbrequests.Database(url, sql_dir=sql_dir)
         yield db  # providing fixture value for a test case
         # tear_down
         db.close()
@@ -82,7 +82,7 @@ def db(request):
 
 @pytest.fixture(scope="module")
 def con(request):
-    """Instance of `pydbtools.Connection(dburl)`
+    """Instance of `dbrequests.Connection(dburl)`
     Ensure, it gets closed after being used in a test or fixture.
     Parametrized with (sql_url_id, sql_url_template) tuple.
     If `sql_url_template` contains `{dbfile}` it is replaced with path to a
@@ -93,7 +93,7 @@ def con(request):
     engine = create_engine(url)
     try:
         time.sleep(15)
-        con = pydbtools.Connection(engine.connect())
+        con = dbrequests.Connection(engine.connect())
         yield con  # providing fixture value for a test case
         # tear_down
         con.close()

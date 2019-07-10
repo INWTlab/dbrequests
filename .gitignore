@@ -6,7 +6,7 @@
 *.coverage
 
 # Python packaging files
-pydbtools.egg-info
+dbrequests.egg-info
 .pytest_cache
 __pycache__
 build
