@@ -81,7 +81,5 @@ Supported modes are:
 The package can be installed via pip:
 
 ```
-pip install git+https://github.com/INWTlab/dbrequests.git
+pip install dbrequests
 ```
-
-Publication on pypi will soon follow.
