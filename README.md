@@ -1,8 +1,8 @@
-# pydbtools
+# dbrequests
 
-[![Build Status](https://travis-ci.org/INWTlab/pydbtools.svg?branch=master)](https://travis-ci.org/INWTlab/pydbtools)
+[![Build Status](https://travis-ci.org/INWTlab/dbrequests.svg?branch=master)](https://travis-ci.org/INWTlab/dbrequests)
 
-**pydbtools is a python package built for easy use of raw SQL within python and pandas projects.**
+**dbrequests is a python package built for easy use of raw SQL within python and pandas projects.**
 
 It uses ideas from [records](https://github.com/kennethreitz/records/) and is built using [sqlalchemy-engines](https://www.sqlalchemy.org/), but is more heavily integrated with pandas. It aims to reproduce the pilosophy behind the R-package [dbtools](https://github.com/INWT/dbtools/).
 
@@ -16,7 +16,7 @@ _Database support includes RedShift, Postgres, MySQL, SQLite, Oracle, and MS-SQL
 Easy sending of raw sql and output as pandas DataFrames, with creds or the url of the database:
 
 ```python
-from pydbtools import Database
+from dbrequests import Database
 
 db = Database(creds=creds)
 df = db.send_query("""
@@ -33,7 +33,7 @@ SELECT {col1}, {col2} FROM test;
 ```
 
 ```python
-from pydbtools import Database
+from dbrequests import Database
 
 db = Database(creds=creds, sql_dir = '/path/to/dir/')
 db.send_query('select', col1='id', col2='name')
@@ -43,7 +43,7 @@ df # table test, including columns 'id', 'name' as pandas DataFrame
 You can also pass arguments to pandas `read_sql`-Function:
 
 ```python
-from pydbtools import Database
+from dbrequests import Database
 
 db = Database(creds=creds, sql_dir = '/path/to/dir/')
 db.send_query('select', col1='id', col2='name', index_col='id')
@@ -81,7 +81,7 @@ Supported modes are:
 The package can be installed via pip:
 
 ```
-pip install git+https://github.com/INWTlab/pydbtools.git
+pip install git+https://github.com/INWTlab/dbrequests.git
 ```
 
 Publication on pypi will soon follow.
