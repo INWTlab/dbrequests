@@ -46,7 +46,7 @@ class PublishCommand(Command):
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.0.8'
+version = '1.0.9'
 
 
 def read(f):
@@ -60,7 +60,7 @@ setup(
     author='Matthaeus Deutsch',
     author_email='mdeutsch@outlook.com',
     long_description_content_type="text/markdown",
-    url='https://github.com/INWT/dbrequests',
+    url='https://github.com/INWTlab/dbrequests',
     packages=['dbrequests'],
     package_data={'': ['LICENSE'],
                   'dbrequests': ['sql/*', 'tests/*']},
