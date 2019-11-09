@@ -10,6 +10,7 @@ pydbtools = {path = ".",editable = true}
 pandas = "*"
 ipykernel = "*"
 twine = "*"
+dbrequests = {path = "."}
 
 [dev-packages]
 pytest = "*"

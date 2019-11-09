@@ -2,13 +2,16 @@ import os
 from sqlalchemy import create_engine, inspect, exc
 from contextlib import contextmanager
 from .connection import Connection
+from .query import Query
 from pandas import DataFrame
+
 
 class Database(object):
     """A Database. Encapsulates a url and an SQLAlchemy engine with a pool of
     connections.
 
-    The url to the database can be provided directly or via a credentials-dictionary `creds` with keys:
+    The url to the database can be provided directly or via a credentials-
+    dictionary `creds` with keys:
         - host
         - db
         - user
@@ -18,8 +21,8 @@ class Database(object):
     """
 
     def __init__(self, db_url=None, creds=None, sql_dir=None, **kwargs):
-        # If no db_url was provided, fallback to $DATABASE_URL.
-        self.db_url = db_url
+        # If no db_url was provided, fallback to $DATABASE_URL or creds.
+        self.db_url = db_url or os.environ.get('DATABASE_URL')
         self.sql_dir = sql_dir or os.getcwd()
         if not self.db_url:
             try:
@@ -77,17 +80,8 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        if isinstance(query, str) and not (' ' in query):
-            if not '.sql' in query:
-                query = query + '.sql'
-            try:
-                out = self.query_file(query, **params)
-            except IOError:
-                query = os.path.join(self.sql_dir, query)
-                out = self.query_file(query, **params)
-        else:
-            out = self.query(query, **params)
-        return out
+        sql = Query(query, sql_dir=self.sql_dir, **params)
+        return self.query(sql.text, **params)
 
     def send_bulk_query(self, query, **params):
         """Convenience wrapper for executing a bulk SQL-query like insert, update, create or delete
@@ -101,16 +95,8 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        if isinstance(query, str) and not (' ' in query):
-            if not '.sql' in query:
-                query = query + '.sql'
-            try:
-                self.bulk_query_file(query, **params)
-            except IOError:
-                query = os.path.join(self.sql_dir, query)
-                self.bulk_query_file(query, **params)
-        else:
-            self.bulk_query(query, **params)
+        sql = Query(query, sql_dir=self.sql_dir, **params)
+        return self.bulk_query(sql.text, **params)
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends data to table in database. If the table already exists, different modes of
@@ -142,18 +128,6 @@ class Database(object):
 
         with self.get_connection() as conn:
             conn.bulk_query(query, **params)
-
-    def query_file(self, path, **params):
-        """Like Database.query, but takes a filename to load a query from."""
-
-        with self.get_connection() as conn:
-            return conn.query_file(path, **params)
-
-    def bulk_query_file(self, path, **params):
-        """Like Database.bulk_query, but takes a filename to load a query from."""
-
-        with self.get_connection() as conn:
-            conn.bulk_query_file(path, **params)
 
     @contextmanager
     def transaction(self):

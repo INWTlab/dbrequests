@@ -69,7 +69,7 @@ def db(request):
     """
     url, container = run_docker_container()
     try:
-        time.sleep(15)
+        time.sleep(100)
         db = dbrequests.Database(url, sql_dir=sql_dir)
         yield db  # providing fixture value for a test case
         # tear_down
@@ -92,7 +92,7 @@ def con(request):
     url, container = run_docker_container()
     engine = create_engine(url)
     try:
-        time.sleep(15)
+        time.sleep(100)
         con = dbrequests.Connection(engine.connect())
         yield con  # providing fixture value for a test case
         # tear_down
@@ -101,7 +101,6 @@ def con(request):
     except Exception as e:
         kill_remove_docker_container(container)
         raise(e)
-
 
 
 @pytest.fixture

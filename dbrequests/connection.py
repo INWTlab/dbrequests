@@ -35,47 +35,9 @@ class Connection(object):
 
     def bulk_query(self, query, **params):
         """Bulk insert or update."""
-
-        self._conn.execute(text(query), **params)
-
-    def query_file(self, path, **params):
-        """Like Connection.query, but takes a filename to load a query from."""
-
-        # If path doesn't exists
-        if not os.path.exists(path):
-            raise IOError("File '{}' not found!".format(path))
-
-        # If it's a directory
-        if os.path.isdir(path):
-            raise IOError("'{}' is a directory!".format(path))
-
-        # Read the given .sql file into memory.
-        with open(path) as f:
-            query = f.read()
-
-        query = query.format(**params)
-        # Defer processing to self.query method.
-        return self.query(query=query, **params)
-
-    def bulk_query_file(self, path, **params):
-        """Like Connection.bulk_query, but takes a filename to load a query
-        from.
-        """
-
-         # If path doesn't exists
-        if not os.path.exists(path):
-            raise IOError("File '{}'' not found!".format(path))
-
-        # If it's a directory
-        if os.path.isdir(path):
-            raise IOError("'{}' is a directory!".format(path))
-
-        # Read the given .sql file into memory.
-        with open(path) as f:
-            query = f.read()
-        query = query.format(**params)
         params = {k: v for k, v in params.items() if k in inspect.getfullargspec(self._conn.execute).args}
         self._conn.execute(text(query), **params)
+
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends data to table in database. If the table already exists, different modes of

@@ -19,21 +19,6 @@ class TestConnection:
         assert (df.columns == ['name', 'owner', 'birth']).all()
         assert (df.name == ['Sandy', 'Cookie', 'Charlie']).all()
 
-    def test_select_file(self, con):
-        df = con.query_file(os.path.join(sql_dir, 'select.sql'), index_col='id')
-        assert isinstance(df, pd.DataFrame)
-        assert df.shape == (3,3)
-        assert (df.columns == ['name', 'owner', 'birth']).all()
-        assert (df.name == ['Sandy', 'Cookie', 'Charlie']).all()
-
-    def test_create_insert_file_param(self, con):
-        df = con.query_file(os.path.join(sql_dir, 'select_param.sql'),
-                            col1='name', col2='id', index_col='id')
-        assert isinstance(df, pd.DataFrame)
-        assert df.shape == (3,1)
-        assert (df.columns == ['name']).all()
-        assert (df.name == ['Sandy', 'Cookie', 'Charlie']).all()
-
     def test_send_data_create(self, con):
         con.bulk_query("""
             DROP TABLE cats;
