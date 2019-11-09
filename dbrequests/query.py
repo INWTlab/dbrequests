@@ -1,5 +1,6 @@
 import os
-
+import warnings
+import re
 
 class Query(object):
     """A Query. Encapsulates SQL code given directly or via a SQL file in a specified directory.
@@ -14,17 +15,20 @@ class Query(object):
 
     """
 
-    def __init__(self, query, sql_dir='', **kwargs):
+    def __init__(self, query, sql_dir='', escape_percentage=False, **kwargs):
 
+        self._escape_percentage = escape_percentage
         self.sql_dir = sql_dir
         self.path = None
         if isinstance(query, str) and not (' ' in query):
             if not '.sql' in query:
                 query = query + '.sql'
             self.path = os.path.join(self.sql_dir, query)
-            self.text = self._read_file(**kwargs)
+            text = self._read_file(**kwargs)
         else:
-            self.text = query
+            text = query
+
+        self.text = self.__escape_percentage(text)
 
     def __enter__(self):
         return self
@@ -46,3 +50,13 @@ class Query(object):
             text = f.read()
 
         return text.format(**params)
+
+    def __escape_percentage(self, text):
+        rx = re.compile('(?<!%)%(?!%)')
+        escaped_text = re.sub(rx, '%%', text)
+        if (escaped_text != text):
+            if self._escape_percentage:
+                text = escaped_text
+            else:
+                warnings.warn('Query contains percentage sign without esacping. Please use escape_percentage=True', SyntaxWarning)
+        return text

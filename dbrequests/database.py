@@ -20,7 +20,7 @@ class Database(object):
         - driver (defaults to pymysql)
     """
 
-    def __init__(self, db_url=None, creds=None, sql_dir=None, **kwargs):
+    def __init__(self, db_url=None, creds=None, sql_dir=None, escape_percentage=False, **kwargs):
         # If no db_url was provided, fallback to $DATABASE_URL or creds.
         self.db_url = db_url or os.environ.get('DATABASE_URL')
         self.sql_dir = sql_dir or os.getcwd()
@@ -38,6 +38,7 @@ class Database(object):
 
         # Create an engine.
         self._engine = create_engine(self.db_url, **kwargs)
+        self._escape_percentage = escape_percentage
         self.open = True
 
     def close(self):
@@ -69,7 +70,7 @@ class Database(object):
 
         return Connection(self._engine.connect())
 
-    def send_query(self, query, **params):
+    def send_query(self, query, escape_percentage=None, **params):
         """Convenience wrapper for executing a SQL-query as string or a SQL-file. Parameters can,
         optionally, be provided to the sql-file and to pandas.read_sql. Returns a pandas DataFrame.
 
@@ -80,10 +81,12 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        sql = Query(query, sql_dir=self.sql_dir, **params)
+        if escape_percentage is None:
+            escape_percentage = self._escape_percentage
+        sql = Query(query, sql_dir=self.sql_dir, escape_percentage=escape_percentage, **params)
         return self.query(sql.text, **params)
 
-    def send_bulk_query(self, query, **params):
+    def send_bulk_query(self, query, escape_percentage=None, **params):
         """Convenience wrapper for executing a bulk SQL-query like insert, update, create or delete
         as string or a SQL-file. Parameters can, optionally, be provided to the sql-file and to pandas.read_sql.
         Returns nothing.
@@ -95,7 +98,9 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        sql = Query(query, sql_dir=self.sql_dir, **params)
+        if escape_percentage is None:
+            escape_percentage = self._escape_percentage
+        sql = Query(query, sql_dir=self.sql_dir, escape_percentage=escape_percentage, **params)
         return self.bulk_query(sql.text, **params)
 
     def send_data(self, df, table, mode='insert', **params):

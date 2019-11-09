@@ -16,3 +16,4 @@ dbrequests = {path = "."}
 pytest = "*"
 pydbtools = {path = ".",editable = true}
 docker = "*"
+dbrequests = {path = "."}

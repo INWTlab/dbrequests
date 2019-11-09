@@ -107,3 +107,14 @@ class TestDatabase:
                               'name': ['Chill', 'Cookie', 'Charlie', 'Pi'],
                               'owner': ['Alex', 'Casey', 'River', 'Matt'],
                               'birth': ['2018-03-03', '2014-11-13', '2016-05-21', '2019-08-05']}) == df_out).all(axis=None)
+
+    def test_percentage_escape(self, db):
+        df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Len%';", escape_percentage=True)
+        df.birth = df.birth.astype(str)
+        assert (pd.DataFrame({'id': [1],
+                              'name': ['Sandy'],
+                              'owner': ['Lennon'],
+                              'birth': ['2015-01-03']}) == df).all(axis=None)
+        with pytest.raises(ValueError):
+            with pytest.warns(SyntaxWarning):
+                df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Len%';")

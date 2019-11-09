@@ -35,3 +35,12 @@ class TestQuery:
         with pytest.raises(IOError) as e:
             query = Query('select_asdf', sql_dir)
         assert str(e.value) == "File '{}' not found!".format(sql_dir + '/select_asdf.sql')
+
+    def test_percentage_warning(self):
+        with pytest.warns(SyntaxWarning):
+            query = Query("like a%")
+            assert query.text == "like a%"
+
+    def test_percentage_escape(self):
+        query = Query("like a%", escape_percentage=True)
+        assert query.text == "like a%%"
