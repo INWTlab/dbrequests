@@ -11,6 +11,7 @@ pandas = "*"
 ipykernel = "*"
 twine = "*"
 dbrequests = {path = "."}
+docker = "*"
 
 [dev-packages]
 pytest = "*"
