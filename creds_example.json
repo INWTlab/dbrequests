@@ -1,0 +1,8 @@
+{
+    "user": "username",
+    "password": "password",
+    "host": "host.address",
+    "db": "database",
+    "dialect": "sqldialect",
+    "driver": "drivername"
+}
