@@ -15,19 +15,20 @@ class Query(object):
 
     """
 
-    def __init__(self, query, sql_dir='', escape_percentage=False, **kwargs):
+    def __init__(self, query, sql_dir='', escape_percentage=False, remove_comments=False, **kwargs):
 
         self._escape_percentage = escape_percentage
         self.sql_dir = sql_dir
         self.path = None
         if isinstance(query, str) and not (' ' in query):
-            if not '.sql' in query:
+            if '.sql' not in query:
                 query = query + '.sql'
             self.path = os.path.join(self.sql_dir, query)
             text = self._read_file(**kwargs)
         else:
             text = query
-
+        if remove_comments:
+            text = self.__remove_comments(text)
         self.text = self.__escape_percentage(text)
 
     def __enter__(self):
@@ -52,11 +53,18 @@ class Query(object):
         return text.format(**params)
 
     def __escape_percentage(self, text):
-        rx = re.compile('(?<!%)%(?!%)')
-        escaped_text = re.sub(rx, '%%', text)
+        '''escapes percentage signs within sql files'''
+        escaped_text = re.sub(r'(?<!%)%(?!%)', '%%', text)
         if (escaped_text != text):
             if self._escape_percentage:
                 text = escaped_text
             else:
                 warnings.warn('Query contains percentage sign without esacping. Please use escape_percentage=True', SyntaxWarning)
         return text
+
+    @staticmethod
+    def __remove_comments(code):
+        '''remove multi- and singleline comments from the sql query'''
+        out = (' ').join(re.split(r'/\*|\*/', code)[0::2])  # multiline comments
+        out = '\n'.join([st.split('--')[0] for st in out.split('\n')])  # single line comments
+        return out
