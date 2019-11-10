@@ -44,3 +44,14 @@ class TestQuery:
     def test_percentage_escape(self):
         query = Query("like a%", escape_percentage=True)
         assert query.text == "like a%%"
+
+    def test_remove_comments(self):
+        singleline = '''x --comment'''
+        assert Query(singleline, remove_comments=True).text == 'x '
+        singleline_break = '''
+x 
+--comment
+'''
+        assert Query(singleline_break, remove_comments=True).text == '\nx \n\n'
+        multiline = '''x/*y*/ x/*y*/'''
+        assert Query(multiline, remove_comments=True).text == 'x  x '
