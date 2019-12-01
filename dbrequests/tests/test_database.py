@@ -107,3 +107,27 @@ class TestDatabase:
                               'name': ['Chill', 'Cookie', 'Charlie', 'Pi'],
                               'owner': ['Alex', 'Casey', 'River', 'Matt'],
                               'birth': ['2018-03-03', '2014-11-13', '2016-05-21', '2019-08-05']}) == df_out).all(axis=None)
+
+    def test_percentage_escape(self, db):
+        df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Cas%';", escape_percentage=True)
+        df.birth = df.birth.astype(str)
+        assert (pd.DataFrame({'id': [2],
+                              'name': ['Cookie'],
+                              'owner': ['Casey'],
+                              'birth': ['2013-11-13']}) == df).all(axis=None)
+        with pytest.raises(ValueError):
+            with pytest.warns(SyntaxWarning):
+                df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Cas%';")
+
+    def test_remove_comments(self, db):
+        df = db.send_query("""
+            SELECT name --, owner
+            from /*{comm}*/ cats
+            """, remove_comments=True)
+        assert df.shape == (3, 1)
+        assert df.name.to_list() == ['Sandy', 'Cookie', 'Charlie']
+        with pytest.raises(Exception):
+            df = db.send_query("""
+                SELECT name --, owner
+                from /*{comm}*/ cats
+                """)

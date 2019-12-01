@@ -13,7 +13,7 @@ _Database support includes RedShift, Postgres, MySQL, SQLite, Oracle, and MS-SQL
 
 ### Send queries and bulk queries
 
-Easy sending of raw sql and output as pandas DataFrames, with creds or the url of the database:
+Easy sending of raw sql and output as pandas DataFrames, with credentials given as dictionary (for an example see creds_example.json) or the url of the database:
 
 ```python
 from dbrequests import Database
@@ -72,6 +72,8 @@ Supported modes are:
 
 ### Uitilities
 
+- Comments can be automatically removed from SQL code by adding `remove_comments=True` either to the Database defintion or send_query. This is especially useful if outcommenting code blocks including parametized variables and thus `{}`. The default of this behavior is `False`.
+- Percentage signs can be transfered to a Python readable way by adding `escape_percentage=True` either to the Database definition or send_query. This means percentage signs dont have to be escaped manually when sending them via Python. The default is `False`.
 - Database.get_table_names will give existing tables in the database
 - Parameters such es `chunksize` for `pandas.to_sql` may be given to the wrapper function `send_data` and are handed over to pandas. The same is true for `send_query`.
 - For transactions the context manager `transaction` may be of use.

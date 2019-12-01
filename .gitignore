@@ -1,6 +1,7 @@
 # Python files
 *.pys
 *.ipynb
+scratch.py
 
 # Code Coverage
 *.coverage
