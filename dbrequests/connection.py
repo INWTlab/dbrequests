@@ -1,6 +1,5 @@
 from sqlalchemy import text
 from pandas import read_sql
-import os
 import inspect
 
 class Connection(object):
@@ -37,7 +36,6 @@ class Connection(object):
         """Bulk insert or update."""
         params = {k: v for k, v in params.items() if k in inspect.getfullargspec(self._conn.execute).args}
         self._conn.execute(text(query), **params)
-
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends data to table in database. If the table already exists, different modes of

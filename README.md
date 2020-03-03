@@ -70,7 +70,7 @@ Supported modes are:
   - 'replace': Replace records with duplicate primary keys (sql replace into).
   - 'update': Update records with duplicate primary keys (sql insert into duplicate key update).
 
-### Uitilities
+### Utilities
 
 - Comments can be automatically removed from SQL code by adding `remove_comments=True` either to the Database defintion or send_query. This is especially useful if outcommenting code blocks including parametized variables and thus `{}`. The default of this behavior is `False`.
 - Percentage signs can be transfered to a Python readable way by adding `escape_percentage=True` either to the Database definition or send_query. This means percentage signs dont have to be escaped manually when sending them via Python. The default is `False`.
@@ -85,3 +85,6 @@ The package can be installed via pip:
 ```
 pip install dbrequests
 ```
+
+## Extensibility
+dbrequests is designed to easily accommodate different needs in the form of drivers / dialects. For examples of how to extend the capabilities of the Connection class, see connection_subclass.py under examples.
