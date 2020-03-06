@@ -1,0 +1,6 @@
+[tool.nitpick]
+style = "https://raw.githubusercontent.com/wemake-services/wemake-python-styleguide/master/styles/nitpick-style.toml"
+
+[tool.flakehell]
+base = "https://raw.githubusercontent.com/life4/flakehell/master/pyproject.toml"
+baseline = ".flakehell_baseline"
