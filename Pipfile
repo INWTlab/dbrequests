@@ -18,3 +18,13 @@ pytest = "*"
 pydbtools = {path = ".",editable = true}
 docker = "*"
 dbrequests = {path = "."}
+python-language-server = "*"
+pylint = "*"
+ipython = "*"
+pyls-isort = "*"
+pyls-mypy = "*"
+flake8 = "*"
+autoflake = "*"
+importmagic = "*"
+epc = "*"
+
