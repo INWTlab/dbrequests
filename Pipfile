@@ -5,19 +5,16 @@ name = "pypi"
 
 [packages]
 pymysql = "*"
-e1839a8 = {path = ".",editable = true}
-pydbtools = {path = ".",editable = true}
 pandas = "*"
-ipykernel = "*"
-twine = "*"
-dbrequests = {path = "."}
+dbrequests = {editable = true,extras = ["mysql"],path = "."}
 docker = "*"
+sqlalchemy = "*"
+pytest = "*"
+pylint = "*"
 
 [dev-packages]
 pytest = "*"
-pydbtools = {path = ".",editable = true}
 docker = "*"
-dbrequests = {path = "."}
 python-language-server = "*"
 pylint = "*"
 ipython = "*"
@@ -27,4 +24,3 @@ flake8 = "*"
 autoflake = "*"
 importmagic = "*"
 epc = "*"
-

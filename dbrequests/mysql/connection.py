@@ -1,10 +1,9 @@
-from dbrequests import Connection
+from dbrequests import Connection as SuperConnection
 from sqlalchemy import text
 
 
-class InfileConnection(Connection):
+class Connection(SuperConnection):
     """A Database connection."""
-
     def send_data(self, df, table, mode='insert', **params):
         """Sends data to table in database. This method uses the SQL LOAD DATA
         INFILE command. It will always write the input DataFrame to a CSV file,
