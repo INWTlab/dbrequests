@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 import pytest
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
@@ -11,7 +9,6 @@ from dbrequests.mysql.tests.conftest import set_up_cats as reset
 # - NAs/NaN
 # is idempotent. Don't know how to do that with the pandas data types.
 # Everything is just an 'object'.
-
 @pytest.mark.usefixtures('db')
 class TestConnection:
     def test_insert_happy_path(self, db):
@@ -30,6 +27,7 @@ class TestConnection:
 
     def test_insert_no_override(self, db):
         ## Do nothing on duplicate key
+        breakpoint()
         df_add = pd.DataFrame({
             'id': [3],
             'name': ['Charlie'],

@@ -1,13 +1,14 @@
+"""Configures the test environment. Some helper functions and fixtures."""
 import time
 
-import pandas as pd
 import pytest
 from dbrequests.mysql import Database
+
 from docker import from_env
 
-infile
+
 def run_docker_container():
-    """run mariadb-docker container and return proper url to access"""
+    """Run mariadb-docker container and return proper url for access."""
     creds = {
         'user': 'root',
         'password': 'root',
@@ -34,14 +35,14 @@ def run_docker_container():
 
 
 def kill_remove_docker_container(container):
-    """kill and remove mariadb docker container"""
+    """Kill and remove mariadb docker container."""
     container.kill()
     container.remove()
     return 0, 'Container {} removed.'.format(container.id[:12])
 
 
 def set_up_cats(db):
-    """ set up the right table for testing"""
+    """Set up the cats table for testing."""
     db.bulk_query("""
         SET @@SQL_MODE = REPLACE(@@SQL_MODE, 'STRICT_TRANS_TABLES', '');
         """)
@@ -66,6 +67,7 @@ def set_up_cats(db):
 
 @pytest.fixture
 def db():
+    """Database fixture."""
     url, container = run_docker_container()
     time.sleep(20)
     try:

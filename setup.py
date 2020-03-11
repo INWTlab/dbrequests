@@ -44,13 +44,16 @@ class PublishCommand(Command):
 
         sys.exit()
 
+
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
 version = '1.1.2'
 
 
 def read(f):
+    """Open a file"""
     return open(f, encoding='utf-8').read()
+
 
 packages = [
     "dbrequests",
@@ -69,8 +72,11 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/INWTlab/dbrequests',
     packages=packages + tests,
-    package_data={'': ['LICENSE'],
-                  'dbrequests': ['sql/*', 'tests/*']},
+    package_data={
+        '': ['LICENSE'],
+        'dbrequests': ['sql/*', 'tests/*'],
+        'dbrequests.mysql': ['mysql/tests/*'],
+        },
     install_requires=requires,
     extras_require={
         'pg': ['psycopg2'],

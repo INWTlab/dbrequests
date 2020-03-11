@@ -13,3 +13,6 @@ __pycache__
 build
 dist
 *.pypirc
+.mypy_cache
+.idea
+.vscode

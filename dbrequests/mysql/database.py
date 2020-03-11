@@ -1,6 +1,6 @@
-from dbrequests import Database as SuperDatabase
-
-from .connection import Connection as InfileConnection
+from dbrequests.database import Database as SuperDatabase
+from .connection import Connection as MysqlConnection
+from sqlalchemy import exc
 
 
 class Database(SuperDatabase):
@@ -23,4 +23,4 @@ class Database(SuperDatabase):
         if not self.open:
             raise exc.ResourceClosedError('Database closed.')
 
-        return InfileConnection(self._engine.connect())
+        return MysqlConnection(self._engine.connect())
