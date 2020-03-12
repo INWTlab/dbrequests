@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import create_engine, inspect, exc
 from contextlib import contextmanager
-from .connection import Connection
+from .connection import Connection as DefaultConnection
 from .query import Query
 from pandas import DataFrame
 
@@ -20,7 +20,7 @@ class Database(object):
         - driver (defaults to pymysql)
     """
 
-    def __init__(self, db_url=None, creds=None, sql_dir=None,
+    def __init__(self, db_url=None, creds=None, sql_dir=None, connection_class=DefaultConnection,
                  escape_percentage=False, remove_comments=False, **kwargs):
         # If no db_url was provided, fallback to $DATABASE_URL or creds.
         self.db_url = db_url or os.environ.get('DATABASE_URL')
@@ -42,6 +42,7 @@ class Database(object):
         self._escape_percentage = escape_percentage
         self._remove_comments = remove_comments
         self.open = True
+        self.connection_class = connection_class
 
     def close(self):
         """Closes the Database."""
@@ -70,7 +71,7 @@ class Database(object):
         if not self.open:
             raise exc.ResourceClosedError('Database closed.')
 
-        return Connection(self._engine.connect())
+        return self.connection_class(self._engine.connect())
 
     def __get_query_text(self, query, escape_percentage, remove_comments, **params):
         """Private wrapper for accessing the text of the query."""
