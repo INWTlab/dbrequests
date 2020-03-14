@@ -1,6 +1,6 @@
 from dbrequests.database import Database as SuperDatabase
 from .connection import Connection as MysqlConnection
-from sqlalchemy import exc
+from sqlalchemy import exc, create_engine
 
 
 class Database(SuperDatabase):
@@ -16,6 +16,15 @@ class Database(SuperDatabase):
         - dialect (defaults to mysql)
         - driver (defaults to pymysql)
     """
+
+    def open(self, **kwargs):
+        """Open a connection."""
+        if not self._open:
+            url_with_infile = self.db_url + '?local_infile=1'
+            self._engine = create_engine(url_with_infile, **kwargs)
+            self._open = True
+        return self._open
+        
     def get_connection(self):
         """Get a connection to this Database. Connections are retrieved from a
         pool.

@@ -69,7 +69,7 @@ def set_up_cats(db):
 def db():
     """Database fixture."""
     url, container = run_docker_container()
-    time.sleep(20)
+    time.sleep(50)
     try:
         db = Database(url)
         yield db

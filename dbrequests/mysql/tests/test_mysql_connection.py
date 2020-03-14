@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
 
+
 # TODOs: Ideas for further Tests:
 # Since we write to CSV, we should check that write, then read
 # - numbers
@@ -11,7 +12,10 @@ from dbrequests.mysql.tests.conftest import set_up_cats as reset
 # Everything is just an 'object'.
 @pytest.mark.usefixtures('db')
 class TestConnection:
+    """Unit Tests for send_data method of a mysql connection."""
+
     def test_insert_happy_path(self, db):
+        """Insert some data and check, that it is actually there."""
         df_add = pd.DataFrame({
             'name': ['Chill'],
             'owner': ['Alex'],
@@ -26,8 +30,7 @@ class TestConnection:
         assert (df_add == df_out).all(axis=None)
 
     def test_insert_no_override(self, db):
-        ## Do nothing on duplicate key
-        breakpoint()
+        """Do not override on duplictate key."""
         df_add = pd.DataFrame({
             'id': [3],
             'name': ['Charlie'],
@@ -56,7 +59,40 @@ class TestConnection:
         assert df_nrow.nrows.values[0] == 1
 
         df_out = db.query("SELECT * FROM cats;")
+        df_out.birth = df_out.birth.astype(str)
         assert (df_replace == df_out).all(axis=None)
+
+    def test_send_data_delete(self, db):
+        ## Testing for rollback
+        df_replace = pd.DataFrame({
+            'id': [1],
+            'name': ['Chill'],
+            'owner': ['Alex'],
+            'wrong_col': ['2018-03-03']
+        })
+        
+        reset(db)
+        try:
+            db.send_data(df_replace, 'cats', mode='delete')
+        finally:
+            print('totally intended')
+        
+        df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
+        assert df_nrow.nrows.values[0] == 3
+
+        ## Now again for a happy delete mode:
+        df_replace = pd.DataFrame({
+            'id': [1],
+            'name': ['Chill'],
+            'owner': ['Alex'],
+            'birth': ['2018-03-03']
+        })
+        
+        reset(db)
+        db.send_data(df_replace, 'cats', mode='delete')
+        
+        df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
+        assert df_nrow.nrows.values[0] == 1
 
     def test_send_data_replace(self, db):
         df_replace = pd.DataFrame({
@@ -73,6 +109,7 @@ class TestConnection:
         assert df_nrow.nrows.values[0] == 3
 
         df_out = db.query("SELECT * FROM cats where id = 1;")
+        df_out.birth = df_out.birth.astype(str)
         assert (df_replace == df_out).all(axis=None)
 
     def test_send_data_update(self, db):

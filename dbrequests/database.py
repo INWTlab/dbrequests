@@ -37,16 +37,22 @@ class Database(object):
             except:
                 raise ValueError('You must provide a db_url or proper creds.')
 
-        # Create an engine.
-        self._engine = create_engine(self.db_url, **kwargs)
         self._escape_percentage = escape_percentage
         self._remove_comments = remove_comments
-        self.open = True
+        self._open = False
+        self.open(**kwargs)
+
+    def open(self, **kwargs):
+        """Open a connection."""
+        if not self._open:
+            self._engine = create_engine(self.db_url, **kwargs)
+            self._open = True
+        return self._open
 
     def close(self):
-        """Closes the Database."""
+        """Close the connection."""
         self._engine.dispose()
-        self.open = False
+        self._open = False
 
     def __enter__(self):
         return self
@@ -55,9 +61,9 @@ class Database(object):
         self.close()
 
     def __repr__(self):
-        return '<Database open={}>'.format(self.open)
+        return '<Database open={}>'.format(self._open)
 
-    def get_table_names(self, internal=False):
+    def get_table_names(self):
         """Returns a list of table names for the connected database."""
 
         # Setup SQLAlchemy for Database inspection.
@@ -67,7 +73,7 @@ class Database(object):
         """Get a connection to this Database. Connections are retrieved from a
         pool.
         """
-        if not self.open:
+        if not self._open:
             raise exc.ResourceClosedError('Database closed.')
 
         return Connection(self._engine.connect())
@@ -124,7 +130,7 @@ class Database(object):
         """
         if not isinstance(df, DataFrame):
             raise TypeError('df has to be a pandas DataFrame.')
-        with self.get_connection() as conn:
+        with self.transaction() as conn:
             return conn.send_data(df, table, mode, **params)
 
     def query(self, query, **params):
