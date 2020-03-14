@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
 
 
@@ -63,7 +64,7 @@ class TestConnection:
         assert (df_replace == df_out).all(axis=None)
 
     def test_send_data_delete(self, db):
-        ## Testing for rollback
+        # Testing for rollback
         df_replace = pd.DataFrame({
             'id': [1],
             'name': ['Chill'],
@@ -80,7 +81,7 @@ class TestConnection:
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
         assert df_nrow.nrows.values[0] == 3
 
-        ## Now again for a happy delete mode:
+        # Now again for a happy delete mode:
         df_replace = pd.DataFrame({
             'id': [1],
             'name': ['Chill'],
@@ -111,6 +112,26 @@ class TestConnection:
         df_out = db.query("SELECT * FROM cats where id = 1;")
         df_out.birth = df_out.birth.astype(str)
         assert (df_replace == df_out).all(axis=None)
+
+    def test_send_data_idempotence(self, db):
+        """We check that reading and writing back in is idempotent.
+        
+        This is not obvious because we write to a CSV as intermediate step.
+        """
+        df_replace = pd.DataFrame({
+            'id': [1],
+            'name': ['Chill'],
+            'owner': [np.nan],
+            'birth': ['2018-03-03']
+        })
+
+        reset(db)
+        db.send_data(df_replace, 'cats', mode='replace')
+        df_in = db.query("SELECT * FROM cats;")
+        db.send_data(df_in, 'cats', mode='truncate')
+        df_inn = db.query("SELECT * FROM cats;")
+
+        assert (df_in == df_inn).all(axis=None)
 
     def test_send_data_update(self, db):
         df_replace = pd.DataFrame({
