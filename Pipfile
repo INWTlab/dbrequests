@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pymysql = "*"
 pandas = "*"
 dbrequests = {editable = true,extras = ["mysql"],path = "."}
 sqlalchemy = "*"
@@ -16,5 +15,5 @@ docker = "*"
 bandit = "*"
 prospector = "*"
 pylama = "*"
-#pydocstyle = "*"
 rope = "*"
+pymysql = "*"
