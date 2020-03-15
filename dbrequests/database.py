@@ -142,20 +142,19 @@ class Database(object):
 
     def bulk_query(self, query, **params):
         """Bulk insert or update."""
-
         with self.get_connection() as conn:
             conn.bulk_query(query, **params)
 
     @contextmanager
     def transaction(self):
-        """A context manager for executing a transaction on this Database."""
-
+        """Execute a transaction on this Database."""
         conn = self.get_connection()
         tx = conn.transaction()
         try:
             yield conn
             tx.commit()
-        except:
+        except BaseException:
             tx.rollback()
+            raise
         finally:
             conn.close()

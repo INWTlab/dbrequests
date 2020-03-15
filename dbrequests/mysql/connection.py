@@ -4,15 +4,18 @@ This is mysql and mariadb compliant.
 """
 from tempfile import NamedTemporaryFile as TmpFile
 from dbrequests import Connection as SuperConnection
+from contextlib import contextmanager
 
 
 class Connection(SuperConnection):
     """A Database connection."""
 
     def send_data(self, df, table, mode='insert', **params):
-        """Sends data to table in database. This method uses the SQL LOAD DATA
-        INFILE command. It will always write the input DataFrame to a CSV file,
-        and then execute the SQL Statement.
+        """Send data to table in database.
+
+        This method uses the SQL LOAD DATA LOCAL INFILE command. It will always
+        write the input DataFrame to a CSV file, and then execute the SQL
+        Statement.
 
         Args:
             - df (pandas DataFrame): DataFrame.
@@ -23,12 +26,11 @@ class Connection(SuperConnection):
                   primary keys, a sql-error is returned.
                 - 'truncate': drop table and recreate it. There is no comming
                 back, no rollback.
-                - 'delete': a safer truncate, but more expensive. We can roll 
+                - 'delete': a safer truncate, but more expensive. We can roll
                 back from this one.
                 - 'replace': replaces duplicate primary keys
                 - 'update': updates duplicate primary keys
         """
-
         if mode == 'insert':
             self._send_data_insert(df, table, **params)
         elif mode == 'replace':
@@ -56,7 +58,7 @@ class Connection(SuperConnection):
     def _send_data_truncate(self, df, table):
         self.bulk_query("truncate table {table};".format(table=table))
         self._send_data_insert(df, table)
-        
+
     def _send_data_delete(self, df, table):
         self.bulk_query("delete from {table};".format(table=table))
         self._send_data_insert(df, table)
@@ -64,10 +66,13 @@ class Connection(SuperConnection):
     def _send_data_update(self, df, table, mode='replace', **params):
         # We override the method from the super-class and need to honor the
         # interface. However, mode and **params are not needed here.
-        breakpoint()
-        tmp_table = self._create_temporary_table(table)
-        self._send_data_insert(df, tmp_table)
-        self._insert_update(df, table, tmp_table)
+        #
+        # TODO: We may want to delete columns that are not in df. Currently
+        # this method will enforce that there are default values for fields not
+        # part of df. This is an unnecessary restriction.
+        with self._temporary_table(table) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            self._insert_update(df, table, tmp_table)
 
     def _write_csv(self, df, file):
         df.to_csv(path_or_buf=file.name, line_terminator='\n',
@@ -89,15 +94,6 @@ class Connection(SuperConnection):
             table=table,
             columns=self._sql_cols(df)))
 
-    def _create_temporary_table(self, table):
-        tmp_table = 'tmp_dbrequests_' + table
-        self.bulk_query('''
-        create temporary table `{tmp_table}` like `{table}`;'''.format(
-            tmp_table=tmp_table,
-            table=table
-        ))
-        return tmp_table
-
     def _insert_update(self, df, table, tmp_table):
         self.bulk_query('''
         insert into `{table}` ({columns})
@@ -109,11 +105,24 @@ class Connection(SuperConnection):
             tmp_table=tmp_table,
             update=self._sql_update(df)))
 
+    @contextmanager
+    def _temporary_table(self, table):
+        tmp_table = 'tmp_dbrequests_' + table
+        self.bulk_query('''
+        create temporary table `{tmp_table}` like `{table}`;'''.format(
+            tmp_table=tmp_table,
+            table=table
+        ))
+        try:
+            yield tmp_table
+        finally:
+            self.bulk_query('drop temporary table {};'.format(tmp_table))
+
     @staticmethod
     def _sql_cols(df):
         cols = ', '.join(['`' + str(name) + '`' for name in df.columns.values])
         return cols
-    
+
     @staticmethod
     def _sql_update(df):
         stmt = ", ".join(

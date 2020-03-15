@@ -68,13 +68,13 @@ class TestConnection:
             'owner': ['Alex'],
             'wrong_col': ['2018-03-03']
         })
-        
+
         reset(db)
         try:
             db.send_data(df_replace, 'cats', mode='delete')
         finally:
             print('totally intended')
-        
+
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
         assert df_nrow.nrows.values[0] == 3
 
@@ -85,10 +85,10 @@ class TestConnection:
             'owner': ['Alex'],
             'birth': ['2018-03-03']
         })
-        
+
         reset(db)
         db.send_data(df_replace, 'cats', mode='delete')
-        
+
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
         assert df_nrow.nrows.values[0] == 1
 
