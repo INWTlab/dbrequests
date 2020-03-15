@@ -20,8 +20,8 @@ class Connection(SuperConnection):
         Args:
             - df (pandas DataFrame): DataFrame.
             - table_name (str): Name of SQL table.
-            - mode ({'insert', 'truncate', 'replace', 'update'}): Mode of Data
-              Insertion. Defaults to 'insert'.
+            - mode ({'insert', 'truncate', 'replace', 'update', 'delete'}):
+            Mode of Data Insertion. Defaults to 'insert'.
                 - 'insert': appends data. If there are duplicates in the
                   primary keys, a sql-error is returned.
                 - 'truncate': drop table and recreate it. There is no comming
