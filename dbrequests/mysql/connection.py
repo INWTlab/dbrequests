@@ -1,7 +1,9 @@
+"""Implements the send_data method using load data local infile.
+
+This is mysql and mariadb compliant.
+"""
 from tempfile import NamedTemporaryFile as TmpFile
-from contextlib import contextmanager
 from dbrequests import Connection as SuperConnection
-from sqlalchemy import text
 
 
 class Connection(SuperConnection):
@@ -60,7 +62,12 @@ class Connection(SuperConnection):
         self._send_data_insert(df, table)
 
     def _send_data_update(self, df, table, mode='replace', **params):
-        raise NotImplementedError('Mode is not yet implemented!')
+        # We override the method from the super-class and need to honor the
+        # interface. However, mode and **params are not needed here.
+        breakpoint()
+        tmp_table = self._create_temporary_table(table)
+        self._send_data_insert(df, tmp_table)
+        self._insert_update(df, table, tmp_table)
 
     def _write_csv(self, df, file):
         df.to_csv(path_or_buf=file.name, line_terminator='\n',
@@ -75,17 +82,41 @@ class Connection(SuperConnection):
         character set utf8mb4
         fields terminated by ','
         optionally enclosed by '\"'
-        lines terminated by '\n'
-        {columns};""".format(
+        lines terminated by '\\n'
+        ({columns});""".format(
             path=file.name,
             replace=replace,
             table=table,
             columns=self._sql_cols(df)))
 
+    def _create_temporary_table(self, table):
+        tmp_table = 'tmp_dbrequests_' + table
+        self.bulk_query('''
+        create temporary table `{tmp_table}` like `{table}`;'''.format(
+            tmp_table=tmp_table,
+            table=table
+        ))
+        return tmp_table
+
+    def _insert_update(self, df, table, tmp_table):
+        self.bulk_query('''
+        insert into `{table}` ({columns})
+        select {columns}
+        from `{tmp_table}`
+        on duplicate key update {update};'''.format(
+            table=table,
+            columns=self._sql_cols(df),
+            tmp_table=tmp_table,
+            update=self._sql_update(df)))
+
     @staticmethod
     def _sql_cols(df):
-        cols = ','.join(['`' + str(x) + '`' for x in df.columns.values])
-        return '(' + cols + ')'
+        cols = ', '.join(['`' + str(name) + '`' for name in df.columns.values])
+        return cols
     
-    
-        
+    @staticmethod
+    def _sql_update(df):
+        stmt = ", ".join(
+            ["`{name}`=values(`{name}`)".format(name=str(name))
+                for name in df.columns.values])
+        return stmt
