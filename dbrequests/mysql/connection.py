@@ -115,6 +115,9 @@ class Connection(SuperConnection):
         ))
         try:
             yield tmp_table
+        except Exception:
+            self.bulk_query('drop temporary table {};'.format(tmp_table))
+            raise
         finally:
             self.bulk_query('drop temporary table {};'.format(tmp_table))
 

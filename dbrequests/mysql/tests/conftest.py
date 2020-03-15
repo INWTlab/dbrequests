@@ -5,6 +5,7 @@ import pytest
 from dbrequests.mysql import Database
 
 from docker import from_env
+from docker.errors import APIError
 
 
 def run_docker_container():
@@ -17,16 +18,21 @@ def run_docker_container():
         'port': 3307
     }
     client = from_env()
-    client.containers.list()
-    container = client.containers.run('mariadb:10.3',
-                                      name='test-mariadb-database',
-                                      ports={3306: creds['port']},
-                                      environment={
-                                          'MYSQL_ROOT_PASSWORD':
-                                          creds['password'],
-                                          'MYSQL_DATABASE': creds['db']
-                                      },
-                                      detach=True)
+    try:
+        container = client.containers.run(
+            'mariadb:10.3',
+            name='test-mariadb-database',
+            ports={3306: creds['port']},
+            environment={
+                'MYSQL_ROOT_PASSWORD':
+                creds['password'],
+                'MYSQL_DATABASE': creds['db']
+            },
+            detach=True)
+        time.sleep(50)
+    except APIError:
+        container = client.containers.get('test-mariadb-database')
+
     url = ("mysql+pymysql://{}:{}@{}:{}/{}".format(creds['user'],
                                                    creds['password'],
                                                    creds['host'],
@@ -69,9 +75,9 @@ def set_up_cats(db):
 def db():
     """Database fixture."""
     url, container = run_docker_container()
-    time.sleep(50)
     try:
         db = Database(url)
+        set_up_cats(db)
         yield db
         db.close()
         kill_remove_docker_container(container)

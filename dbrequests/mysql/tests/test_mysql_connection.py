@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
+from sqlalchemy.exc import InternalError
 
 
 @pytest.mark.usefixtures('db')
@@ -26,7 +27,7 @@ class TestConnection:
         assert (df_add == df_out).all(axis=None)
 
     def test_insert_no_override(self, db):
-        """Do not override on duplictate key."""
+        """Do not override on duplicate key."""
         df_add = pd.DataFrame({
             'id': [3],
             'name': ['Charlie'],
@@ -72,7 +73,7 @@ class TestConnection:
         reset(db)
         try:
             db.send_data(df_replace, 'cats', mode='delete')
-        finally:
+        except InternalError:
             print('totally intended')
 
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
