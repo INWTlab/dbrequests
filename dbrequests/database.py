@@ -156,8 +156,8 @@ class Database(object):
         try:
             yield conn
             tx.commit()
-        except BaseException:
+        except BaseException as e:
             tx.rollback()
-            raise
+            raise e
         finally:
             conn.close()

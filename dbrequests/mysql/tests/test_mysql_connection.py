@@ -39,7 +39,7 @@ class TestConnection:
         db.send_data(df_add, 'cats', mode='insert')
         df_out = db.query("SELECT * FROM cats where id = 3;")
 
-        assert df_out.birth.astype(str).values[0] == '2016-05-21'
+        assert df_out.birth.astype(str)[0] == '2016-05-21'
 
     def test_send_data_truncate(self, db):
         """Truncate table before insert."""
@@ -54,32 +54,14 @@ class TestConnection:
         db.send_data(df_replace, 'cats', mode='truncate')
 
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
-        assert df_nrow.nrows.values[0] == 1
+        assert df_nrow.nrows[0] == 1
 
         df_out = db.query("SELECT * FROM cats;")
         df_out.birth = df_out.birth.astype(str)
         assert (df_replace == df_out).all(axis=None)
 
-    def test_send_data_delete(self, db):
-        """Delete before insert and check the rollback."""
-        # Testing for rollback
-        df_replace = pd.DataFrame({
-            'id': [1],
-            'name': ['Chill'],
-            'owner': ['Alex'],
-            'wrong_col': ['2018-03-03']
-        })
-
-        reset(db)
-        try:
-            db.send_data(df_replace, 'cats', mode='delete')
-        except InternalError:
-            print('totally intended')
-
-        df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
-        assert df_nrow.nrows.values[0] == 3
-
-        # Now again for a happy delete mode:
+    def test_delete_happy_path(self, db):
+        """First delete all rows, then insert new data"""
         df_replace = pd.DataFrame({
             'id': [1],
             'name': ['Chill'],
@@ -91,7 +73,23 @@ class TestConnection:
         db.send_data(df_replace, 'cats', mode='delete')
 
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
-        assert df_nrow.nrows.values[0] == 1
+        assert df_nrow.nrows[0] == 1
+
+    def test_delete_rollback_on_failure(self, db):
+        """Delete before insert and check the rollback."""
+        df_replace = pd.DataFrame({
+            'id': [1],
+            'name': ['Chill'],
+            'owner': ['Alex'],
+            'wrong_col': ['2018-03-03']
+        })
+
+        reset(db)
+        with pytest.raises(InternalError):
+            db.send_data(df_replace, 'cats', mode='delete')
+
+        df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
+        assert df_nrow.nrows[0] == 3
 
     def test_send_data_replace(self, db):
         """Send data and replace on duplicate key."""
@@ -106,7 +104,7 @@ class TestConnection:
         db.send_data(df_replace, 'cats', mode='replace')
 
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
-        assert df_nrow.nrows.values[0] == 3
+        assert df_nrow.nrows[0] == 3
 
         df_out = db.query("SELECT * FROM cats where id = 1;")
         df_out.birth = df_out.birth.astype(str)
@@ -158,7 +156,7 @@ class TestConnection:
 
         # We have a new row:
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
-        assert df_nrow.nrows.values[0] == 4
+        assert df_nrow.nrows[0] == 4
 
         # Changes are made:
         df_out = db.query("SELECT * FROM cats where id in (1, 4);")
