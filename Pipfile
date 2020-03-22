@@ -9,13 +9,14 @@ dbrequests = {editable = true,extras = ["mysql"],path = "."}
 sqlalchemy = "*"
 
 [dev-packages]
+autopep8 = "*"
 docker = "*"
 flake8 = "*"
 ipython = "*"
 mypy = "*"
 pymysql = "*"
 pytest = "*"
-black = "*"
+pylint = "*"
 
 [pipenv]
 allow_prereleases = true
