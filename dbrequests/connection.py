@@ -73,7 +73,7 @@ class Connection(object):
 
     def _send_data_replace(self, df, table, **params):
         warnings.warn("""
-        The mode 'replace' is depreacted and will be removed in due time. Please
+        The mode 'replace' is deprecated and will be removed in due time. Please
         change to the SQL dialect specific implementation.""", DeprecationWarning)
         with self._temporary_table(table) as tmp_table:
             self._send_data_insert(df, tmp_table)
@@ -85,7 +85,7 @@ class Connection(object):
 
     def _send_data_update(self, df, table, **params):
         warnings.warn("""
-        The mode 'update' is depreacted and will be removed in due time. Please
+        The mode 'update' is deprecated and will be removed in due time. Please
         change to the SQL dialect specific implementation.""", DeprecationWarning)
         with self._temporary_table(table) as tmp_table:
             self._send_data_insert(df, tmp_table)
