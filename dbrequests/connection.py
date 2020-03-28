@@ -1,8 +1,9 @@
+import inspect
+import warnings
+from contextlib import contextmanager
+
 from sqlalchemy import text
 from pandas import read_sql
-import inspect
-from contextlib import contextmanager
-import warnings
 
 
 class Connection(object):
