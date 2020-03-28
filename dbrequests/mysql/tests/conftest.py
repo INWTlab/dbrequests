@@ -71,7 +71,7 @@ def set_up_cats(db):
         """)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def db():
     """Database fixture."""
     url, container = run_docker_container()
