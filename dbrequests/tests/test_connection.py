@@ -1,9 +1,8 @@
-from dbrequests import Connection
-import pymysql
-import pandas as pd
 import os
-import pytest
 
+import pandas as pd
+import pymysql
+import pytest
 
 sql_dir = os.path.join(os.getcwd(), 'dbrequests/tests/sql')
 sql_dir = os.path.join(os.path.dirname(__file__), 'sql')

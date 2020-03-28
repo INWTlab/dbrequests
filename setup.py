@@ -6,7 +6,7 @@ import sys
 from codecs import open
 from shutil import rmtree
 
-from setuptools import setup, Command
+from setuptools import Command, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -44,13 +44,23 @@ class PublishCommand(Command):
 
         sys.exit()
 
+
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.2.0'
+version = '1.3.0'
 
 
 def read(f):
+    """Open a file"""
     return open(f, encoding='utf-8').read()
+
+
+packages = [
+    "dbrequests",
+    "dbrequests.mysql",
+]
+
+tests = [p + ".tests" for p in packages]
 
 setup(
     name='dbrequests',
@@ -61,9 +71,12 @@ setup(
     author_email='mdeutsch@outlook.com',
     long_description_content_type="text/markdown",
     url='https://github.com/INWTlab/dbrequests',
-    packages=['dbrequests'],
-    package_data={'': ['LICENSE'],
-                  'dbrequests': ['sql/*', 'tests/*']},
+    packages=packages + tests,
+    package_data={
+        '': ['LICENSE'],
+        'dbrequests': ['sql/*', 'tests/*'],
+        'dbrequests.mysql': ['mysql/tests/*'],
+        },
     install_requires=requires,
     extras_require={
         'pg': ['psycopg2'],

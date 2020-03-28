@@ -14,5 +14,7 @@ build
 dist
 *.pypirc
 
-# Pycharm files
+# IDE files
 .idea
+.vscode
+.mypy_cache

@@ -4,11 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-dbrequests = {path = "."}
+pandas = "*"
+dbrequests = {editable = true,extras = ["mysql"],path = "."}
+sqlalchemy = "*"
 
 [dev-packages]
-pytest = "*"
+autopep8 = "*"
 docker = "*"
-dbrequests = {path = "."}
+flake8 = "*"
+ipython = "*"
+mypy = "*"
 pymysql = "*"
+pytest = "*"
+pylint = "*"
 
+[pipenv]
+allow_prereleases = true

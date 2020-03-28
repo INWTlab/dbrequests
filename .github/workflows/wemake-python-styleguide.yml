@@ -1,0 +1,11 @@
+name: wemake-python-styleguide
+on:
+  push:
+    branches:
+      - feature/#15-load-data-infile
+jobs:
+  wemake:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: wemake-service
+        uses: wemake-services/wemake-python-styleguide@0.13.4
