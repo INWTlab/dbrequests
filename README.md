@@ -1,6 +1,6 @@
 # dbrequests
 
-[![Build Status](https://travis-ci.org/INWTlab/dbrequests.svg?branch=master)](https://travis-ci.org/INWTlab/dbrequests)
+[![Build Status](https://travis-ci.org/INWTlab/dbrequests.svg?branch=master)](https://travis-ci.org/INWTlab/dbrequests)![Publish to PyPi](https://github.com/INWTlab/dbrequests/workflows/Publish%20to%20PyPi/badge.svg?branch=master)
 
 **dbrequests is a python package built for easy use of raw SQL within python and pandas projects.**
 
