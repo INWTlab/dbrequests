@@ -1,6 +1,5 @@
 from dbrequests.database import Database as SuperDatabase
 from .connection import Connection as MysqlConnection
-from sqlalchemy import create_engine
 
 
 class Database(SuperDatabase):
@@ -16,16 +15,10 @@ class Database(SuperDatabase):
     """
     def __init__(self, db_url=None, creds=None, sql_dir=None,
                  escape_percentage=False, remove_comments=False, **kwargs):
+        connect_args = kwargs.pop('connect_args', {})
+        connect_args["local_infile"] = 1
         super().__init__(db_url=db_url, creds=creds, sql_dir=sql_dir,
                          connection_class=MysqlConnection,
                          escape_percentage=escape_percentage,
                          remove_comments=remove_comments,
-                         **kwargs)
-
-    def open(self, **kwargs):
-        """Open a connection."""
-        if not self._open:
-            url_with_infile = self.db_url + '?local_infile=1'
-            self._engine = create_engine(url_with_infile, **kwargs)
-            self._open = True
-        return self._open
+                         connect_args=connect_args, **kwargs)
