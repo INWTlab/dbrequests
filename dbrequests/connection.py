@@ -1,6 +1,9 @@
 from sqlalchemy import text
 from pandas import read_sql
 import inspect
+from contextlib import contextmanager
+import warnings
+
 
 class Connection(object):
     """A Database connection."""
@@ -28,18 +31,21 @@ class Connection(object):
         """
 
         # Execute the given query.
-        params = {k: v for k, v in params.items() if k in inspect.getfullargspec(read_sql).args}
+        params = {k: v for k, v in params.items(
+        ) if k in inspect.getfullargspec(read_sql).args}
         results = read_sql(query, self._conn, **params)
         return results
 
     def bulk_query(self, query, **params):
         """Bulk insert or update."""
-        params = {k: v for k, v in params.items() if k in inspect.getfullargspec(self._conn.execute).args}
+        params = {k: v for k, v in params.items(
+        ) if k in inspect.getfullargspec(self._conn.execute).args}
         self._conn.execute(text(query), **params)
 
     def send_data(self, df, table, mode='insert', **params):
-        """Sends data to table in database. If the table already exists, different modes of
-        insertion are provided.
+        """
+        Sends data to table in database. If the table already exists, different
+        modes of insertion are provided.
 
         Args:
             - df (pandas DataFrame): DataFrame.
@@ -49,44 +55,67 @@ class Connection(object):
                 - 'truncate': replaces the complete table.
                 - 'replace': replaces duplicate primary keys
                 - 'update': updates duplicate primary keys
+                - Derived classes may implement additional modes.
         """
-
-        if mode == 'insert':
-            self._send_data_pandas(df, table, pandas_mode='append', **params)
-        elif mode == 'truncate':
-            self._send_data_pandas(df, table, pandas_mode='replace', **params)
-        elif mode in ['replace', 'update']:
-            self._send_data_update(df, table, mode, **params)
+        mode_implementation = '_send_data_{}'.format(mode)
+        if hasattr(self, mode_implementation):
+            getattr(self, mode_implementation)(df, table, **params)
         else:
-            raise ValueError('{} is not a known mode.'.format(mode))
-        return 'Data successful sent.'
+            raise ValueError('{} is not a known mode'.format(mode))
+        return 'Data successfully sent.'
+
+    def _send_data_insert(self, df, table, **params):
+        self._send_data_pandas(df, table, 'append', **params)
+
+    def _send_data_truncate(self, df, table, **params):
+        self._send_data_pandas(df, table, 'replace', **params)
+
+    def _send_data_replace(self, df, table, **params):
+        with self._temporary_table(table) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            self.bulk_query(
+                'REPLACE INTO `{table}` SELECT * FROM `{tmp_table}`'.format(
+                    table=table,
+                    tmp_table=tmp_table
+                ))
+
+    def _send_data_update(self, df, table, **params):
+        warnings.warn("""
+        The mode 'update' is depreacted and will be removed in due time. Please
+        change to the SQL dialect specific implementation.""", DeprecationWarning)
+        with self._temporary_table(table) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            query = """INSERT INTO `{table}` ({columns})
+                    SELECT {columns} FROM `{tmp_table}`
+                    ON DUPLICATE KEY UPDATE {update};""".format(
+                    table=table,
+                    tmp_table=tmp_table,
+                    columns=', '.join(df.columns),
+                    update=", ".join(["{name}=VALUES({name})".format(name=name)
+                                      for name in df.columns]))
+            self.bulk_query(query)
 
     def _send_data_pandas(self, df, table, pandas_mode='append', **params):
         """Uses the pandas-method to_sql to send data."""
 
-        df.to_sql(table, self._conn, if_exists=pandas_mode, index=False, **params)
+        df.to_sql(table, self._conn, if_exists=pandas_mode,
+                  index=False, **params)
 
-    def _send_data_update(self, df, table, mode = 'replace', **params):
-        """Insert and replaces or updates the existing records via a temporary table."""
-        self.bulk_query("CREATE TEMPORARY TABLE temporary_table_pydbtools LIKE {}".format(table))
+    @contextmanager
+    def _temporary_table(self, table):
+        tmp_table = 'tmp_dbrequests_' + table
+        self.bulk_query('''
+        create temporary table `{tmp_table}` like `{table}`;'''.format(
+            tmp_table=tmp_table,
+            table=table
+        ))
         try:
-            df.to_sql('temporary_table_pydbtools', self._conn, if_exists='append', index=False, **params)
-            if mode == 'replace':
-                query = """REPLACE INTO {table}
-                    SELECT * FROM temporary_table_pydbtools;""".format(table=table)
-            elif mode == 'update':
-                query = """INSERT INTO {table} ({columns})
-                    SELECT {columns} FROM temporary_table_pydbtools
-                    ON DUPLICATE KEY UPDATE {update};""".format(
-                    table=table,
-                    columns=', '.join(df.columns),
-                    update=", ".join(["{name}=VALUES({name})".format(name=name)
-                         for name in df.columns]))
-            self.bulk_query(query)
-            self.bulk_query("DROP TEMPORARY TABLE temporary_table_pydbtools;")
-        except Exception as e:
-            self.bulk_query("DROP TEMPORARY TABLE temporary_table_pydbtools;")
-            raise(e)
+            yield tmp_table
+        except BaseException as e:
+            self.bulk_query('drop temporary table {};'.format(tmp_table))
+            raise e
+        finally:
+            self.bulk_query('drop temporary table {};'.format(tmp_table))
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``

@@ -29,7 +29,7 @@ def run_docker_container():
                 'MYSQL_DATABASE': creds['db']
             },
             detach=True)
-        time.sleep(50)
+        time.sleep(60)
     except APIError:
         container = client.containers.get('test-mariadb-database')
 
