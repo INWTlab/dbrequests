@@ -47,7 +47,7 @@ class PublishCommand(Command):
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.3.1'
+version = '1.3.2'
 
 
 def read(f):

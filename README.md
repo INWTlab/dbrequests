@@ -88,3 +88,10 @@ pip install dbrequests
 
 ## Extensibility
 dbrequests is designed to easily accommodate different needs in the form of drivers / dialects. For examples of how to extend the capabilities of the Connection class, see connection_subclass.py under examples.
+
+### Existing extensions
+- MySQL / MariaDB: use
+```
+from dbrequests.mysql import Database
+```
+for using the MySQL specific extension as Database connector. The extension provides MySQL specific functionalities, like using `load data infile` for writing data to tables.
