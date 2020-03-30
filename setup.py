@@ -12,6 +12,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = '\n' + f.read()
 
+
 class PublishCommand(Command):
     """Support setup.py publish."""
 
@@ -40,14 +41,15 @@ class PublishCommand(Command):
         os.system('{} setup.py sdist bdist_wheel'.format(sys.executable))
 
         self.status('Uploading the package to private PyPi via Twine...')
-        os.system('twine upload -r internal dist/* --config-file .pypirc --verbose --skip-existing')
+        os.system(
+            'twine upload -r internal dist/* --config-file .pypirc --verbose --skip-existing')
 
         sys.exit()
 
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.3.2'
+version = '1.3.3'
 
 
 def read(f):
@@ -76,7 +78,7 @@ setup(
         '': ['LICENSE'],
         'dbrequests': ['sql/*', 'tests/*'],
         'dbrequests.mysql': ['mysql/tests/*'],
-        },
+    },
     install_requires=requires,
     extras_require={
         'pg': ['psycopg2'],
