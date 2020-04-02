@@ -49,7 +49,7 @@ class PublishCommand(Command):
 
 requires = ['SQLAlchemy;python_version>="3.0"',
             'pandas']
-version = '1.3.8'
+version = '1.3.9'
 
 
 def read(f):
@@ -83,7 +83,7 @@ setup(
     extras_require={
         'pg': ['psycopg2'],
         'redshift': ['sqlalchemy-redshift', 'psycopg2'],
-        'mysql': ['pymysql']
+        'mysql': ['pymysql', 'datatable']
     },
     license='MIT',
     classifiers=(
@@ -98,6 +98,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ),
     cmdclass={
         'publish': PublishCommand,
