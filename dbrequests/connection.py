@@ -116,10 +116,12 @@ class Connection(object):
         try:
             yield tmp_table
         except BaseException as e:
-            self.bulk_query('drop temporary table {};'.format(tmp_table))
+            self.bulk_query(
+                'drop temporary table if exists {};'.format(tmp_table))
             raise e
         finally:
-            self.bulk_query('drop temporary table {};'.format(tmp_table))
+            self.bulk_query(
+                'drop temporary table if exists {};'.format(tmp_table))
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``
