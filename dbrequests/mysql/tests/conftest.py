@@ -33,11 +33,7 @@ def run_docker_container():
     except APIError:
         container = client.containers.get('test-mariadb-database')
 
-    url = ("mysql+pymysql://{}:{}@{}:{}/{}".format(creds['user'],
-                                                   creds['password'],
-                                                   creds['host'],
-                                                   creds['port'], creds['db']))
-    return url, container
+    return creds, container
 
 
 def kill_remove_docker_container(container):
@@ -74,9 +70,9 @@ def set_up_cats(db):
 @pytest.fixture(scope="module")
 def db():
     """Database fixture."""
-    url, container = run_docker_container()
+    creds, container = run_docker_container()
     try:
-        db = Database(url)
+        db = Database(creds=creds)
         set_up_cats(db)
         yield db
         db.close()
