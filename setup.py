@@ -83,7 +83,7 @@ setup(
     extras_require={
         'pg': ['psycopg2'],
         'redshift': ['sqlalchemy-redshift', 'psycopg2'],
-        'mysql': ['pymysql']
+        'mysql': ['mysqlclient']
     },
     license='MIT',
     classifiers=(
