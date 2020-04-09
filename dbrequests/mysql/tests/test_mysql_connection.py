@@ -179,3 +179,18 @@ class TestConnection:
         df_out = db.query("SELECT * FROM cats where id = 2;")
         df_out.birth = df_out.birth.astype(str)
         assert (df_expected == df_out).all(axis=None)
+
+
+@pytest.mark.usefixtures('db')
+class TestBugfixes:
+    """Unit Tests after bugs."""
+
+    def test_column_arrangemant_is_maintained(self, db):
+        """Insert some data with fliped columns: #24"""
+        reset(db)
+        df_1 = db.send_query(
+            "select birth, name, owner from cats where id = 3;")
+        db.send_data(df_1, 'cats', mode='insert')
+        df_2 = db.send_query(
+            "select birth, name, owner from cats where id = 4;")
+        assert (df_1 == df_2).all(axis=None)
