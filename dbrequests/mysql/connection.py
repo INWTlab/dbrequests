@@ -42,7 +42,7 @@ class Connection(SuperConnection):
     def _write_csv(self, df, file):
         # We have to convert any obj64 types to str64: Frame.to_csv can't
         # handle obj64 types on it's own.
-        df = df[:, f[:].remove(f[obj64]).extend(str64(f[obj64]))]
+        df = df[:, f[:].remove(f[obj64]).extend(str64(f[obj64]))][:, df.names]
         df.to_csv(path=file.name, header=False)
 
     def _infile_csv(self, file, df, table, replace=''):
