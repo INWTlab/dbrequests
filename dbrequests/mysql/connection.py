@@ -5,6 +5,7 @@ compliant.
 
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
+from datatable import f, obj64, str64
 from dbrequests import Connection as SuperConnection
 from datatable import Frame, rbind
 
@@ -42,9 +43,10 @@ class Connection(SuperConnection):
             self._insert_update(df, table, tmp_table)
 
     def _write_csv(self, df, file):
-        df.to_csv(path_or_buf=file.name, line_terminator='\n',
-                  chunksize=10000000, encoding='utf-8', index=False,
-                  sep=',', na_rep='\\N', header=False)
+        # We have to convert any obj64 types to str64: Frame.to_csv can't
+        # handle obj64 types on it's own.
+        df = df[:, f[:].remove(f[obj64]).extend(str64(f[obj64]))][:, df.names]
+        df.to_csv(path=file.name, header=False)
 
     def _infile_csv(self, file, df, table, replace=''):
         self.bulk_query("""
@@ -74,14 +76,14 @@ class Connection(SuperConnection):
 
     @staticmethod
     def _sql_cols(df):
-        cols = ', '.join(['`' + str(name) + '`' for name in df.columns.values])
+        cols = ', '.join(['`' + str(name) + '`' for name in df.names])
         return cols
 
     @staticmethod
     def _sql_update(df):
         stmt = ", ".join(
             ["`{name}`=values(`{name}`)".format(name=str(name))
-                for name in df.columns.values])
+                for name in df.names])
         return stmt
 
     def query(self, query, **params):
