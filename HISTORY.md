@@ -15,3 +15,21 @@
 ## Version 1.3
   - added mysql backend for specific mysql and mariadb support
   - added possibility for send_data to use infile for mysql databases
+
+## Version 1.3.8
+  - dbrequests.mysql module:
+    - see #11 for motivation on moving dialect specific implementation into extras
+    - see #15 for mysql specific send_data via load data local infile
+
+## Version 1.3.9
+  - dbrequests.mysql:
+    - see #20 for memory efficient send_data using datatable
+
+## Version 1.3.10
+  - dbrequests.mysql:
+    - see #24 for bugfix while writing to csv
+
+## Version 1.3.11
+  - dbrequests.mysql:
+    - see #22 for performance improvements for send_query when reading large datasets
+    - support for pymysql and mysqldb

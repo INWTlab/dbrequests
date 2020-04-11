@@ -106,10 +106,6 @@ class Connection(SuperConnection):
             frame = frame.to_pandas()
         return frame
 
-    def bulk_query(self, query, **params):
-        """Bulk insert or update."""
-        self._conn.execute(query, **params)
-
     @contextmanager
     def _cursor(self):
         cursor = self._conn.connection.cursor()
