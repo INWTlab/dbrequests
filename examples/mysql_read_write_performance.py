@@ -1,8 +1,13 @@
+"""
+In this file your find some of the test scenarios we used to develop and
+understand how to retrieve/send medium sized data sets from/to a mysql
+database.
+"""
 import string
 import time
 import random as rnd
-from datatable import Frame
 from contextlib import contextmanager
+from datatable import Frame
 from docker import from_env
 
 import dbrequests.mysql as mysql
@@ -40,7 +45,8 @@ def numbers(nrow):
 
 def chars(nrow):
     "Generate 'nrow' random strings."
-    return [''.join(rnd.choices(string.ascii_letters, k=8)) for _ in range(nrow)]
+    return [''.join(rnd.choices(string.ascii_letters, k=8))
+            for _ in range(nrow)]
 
 
 DT = Frame(
@@ -78,7 +84,7 @@ with stopwatch('send data with mysqldb/DF.to_sql'):
 del DF
 
 # The following approach is not only twice as fast for 4 times the rows, it
-# will also not cosume any additional memory at all. Thanks to datatable and
+# will also not consume any additional memory at all. Thanks to datatable and
 # MySQLs LOAD DATA LOCAL INFILE.
 with stopwatch('send data with pymysql/infile'):
     with mysql.Database(URL_PYMYSQL) as db:
@@ -92,8 +98,8 @@ with stopwatch('send data with pymysql/infile'):
 # for downloading it.
 with stopwatch('fetch data with pymysql/pd.read_query'):
     with dbrequests.Database(URL_PYMYSQL) as db:
-        dump = db.send_query('select * from some_table limit 5000000;')
-del dump
+        DUMP = db.send_query('select * from some_table limit 5000000;')
+del DUMP
 
 
 # With the new approach we reduce the memory consumption dramatically. Now for
@@ -102,16 +108,16 @@ del dump
 # uncceptable: ~200s.
 with stopwatch('fetch data with pymysql/new approach/no pandas'):
     with mysql.Database(URL_PYMYSQL) as db:
-        dump = db.send_query('select * from some_table;', to_pandas=False)
-del dump
+        DUMP = db.send_query('select * from some_table;', to_pandas=False)
+del DUMP
 
 
 # Now repeat, but fast, please! Instead of pymysql we use mysqldb
 # (mysqlclient). Now the same query takes 20s.
 with stopwatch('fetch data with mysqldb/new approach/no pandas'):
     with mysql.Database(URL_MYSQLDB) as db:
-        dump = db.send_query('select * from some_table;', to_pandas=False)
-del dump
+        DUMP = db.send_query('select * from some_table;', to_pandas=False)
+del DUMP
 
 CONTAINER.kill()
 CONTAINER.remove()
