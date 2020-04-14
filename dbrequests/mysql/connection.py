@@ -88,7 +88,7 @@ class Connection(SuperConnection):
 
     def query(self, query, **params):
         """
-        Executes the given SQL query against the connected Database.
+        Executes the given SQL query against the connected dsatabase.
         """
         chunksize = params.pop('chunksize', 100000)
         to_pandas = params.pop('to_pandas', True)
