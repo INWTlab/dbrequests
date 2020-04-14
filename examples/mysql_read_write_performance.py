@@ -1,5 +1,5 @@
 """
-In this file your find some of the test scenarios we used to develop and
+In this file you find some of the test scenarios we used to develop and
 understand how to retrieve/send medium sized data sets from/to a mysql
 database.
 """
