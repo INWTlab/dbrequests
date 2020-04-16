@@ -194,3 +194,13 @@ class TestBugfixes:
         df_2 = db.send_query(
             "select birth, name, owner from cats where id = 4;")
         assert (df_1 == df_2).all(axis=None)
+
+    def test_escape_sequences(self, db):
+        """Insert some data with escape sequences: #28"""
+        reset(db)
+        db.send_bulk_query('truncate table cats;')
+        db.send_data({'name': ['\\'], 'owner': ['a']}, 'cats')
+        res = db.send_query('select name, owner from cats;')
+
+        assert res.name[0] == '\\'
+        assert res.owner[0] == 'a'
