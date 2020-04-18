@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
-from sqlalchemy.exc import InternalError
+from sqlalchemy.exc import OperationalError, InternalError
 
 
 @pytest.mark.usefixtures('db')
@@ -85,7 +85,9 @@ class TestConnection:
         })
 
         reset(db)
-        with pytest.raises(InternalError):
+        # InternalError with pymysql
+        # OperationalError with mysqldb
+        with pytest.raises((OperationalError, InternalError)):
             db.send_data(df_replace, 'cats', mode='delete')
 
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")

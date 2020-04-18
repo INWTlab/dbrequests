@@ -1,10 +1,14 @@
-"""Implements the send_data method using load data local infile.
-
-This is mysql and mariadb compliant.
 """
+Implements the backend for MySQL databases. This is mysql and mariadb
+compliant.
+"""
+
+from inspect import getfullargspec as getargs
+from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
 from datatable import f, obj64, str64
 from dbrequests import Connection as SuperConnection
+from datatable import Frame, rbind
 
 
 class Connection(SuperConnection):
@@ -83,3 +87,36 @@ class Connection(SuperConnection):
             ["`{name}`=values(`{name}`)".format(name=str(name))
                 for name in df.names])
         return stmt
+
+    def query(self, query, **params):
+        """
+        Executes the given SQL query against the connected dsatabase.
+        """
+        chunksize = params.pop('chunksize', 100000)
+        to_pandas = params.pop('to_pandas', True)
+        with self._cursor() as cursor:
+            params = {k: v for k, v in params.items()
+                      if k in getargs(cursor.execute).args}
+            cursor.execute(query, **params)
+            fields = [i[0] for i in cursor.description]
+            res = []
+            while True:
+                result = cursor.fetchmany(chunksize)
+                if not result:
+                    break
+                res.append(Frame(result))
+        frame = rbind(res, bynames=False)
+        frame.names = fields
+        if to_pandas:
+            frame = frame.to_pandas()
+        return frame
+
+    @contextmanager
+    def _cursor(self):
+        cursor = self._conn.connection.cursor()
+        try:
+            yield cursor
+        except BaseException as error:
+            raise error
+        finally:
+            cursor.close()
