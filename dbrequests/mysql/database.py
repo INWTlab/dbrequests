@@ -35,7 +35,7 @@ class Database(SuperDatabase):
         # mysqldb can be difficult to install, so we also support
         # pymysql. Depending on the driver we pick the apropriate cursorclass.
         connect_args['cursorclass'] = connect_args.get(
-            'corsorclass', self._pick_cursorclass(db_url, creds))
+            'cursorclass', self._pick_cursorclass(db_url, creds))
         super().__init__(db_url=db_url, creds=creds, sql_dir=sql_dir,
                          connection_class=MysqlConnection,
                          escape_percentage=escape_percentage,
