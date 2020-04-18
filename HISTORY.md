@@ -31,5 +31,9 @@
 
 ## Version 1.3.11
   - dbrequests.mysql:
+    - see #28 for bugfix when sending escape sequences
+
+## Version 1.3.12
+  - dbrequests.mysql:
     - see #22 for performance improvements for send_query when reading large datasets
     - support for pymysql and mysqldb
