@@ -3,6 +3,7 @@ Implements the backend for MySQL databases. This is mysql and mariadb
 compliant.
 """
 
+from inspect import getfullargspec as getargs
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
 from datatable import f, obj64, str64
@@ -93,8 +94,9 @@ class Connection(SuperConnection):
         """
         chunksize = params.pop('chunksize', 100000)
         to_pandas = params.pop('to_pandas', True)
-        # Execute the given query.
         with self._cursor() as cursor:
+            params = {k: v for k, v in params.items()
+                      if k in getargs(cursor.execute).args}
             cursor.execute(query, **params)
             fields = [i[0] for i in cursor.description]
             res = []
