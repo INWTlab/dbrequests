@@ -56,6 +56,7 @@ class Connection(SuperConnection):
         character set utf8mb4
         fields terminated by ','
         optionally enclosed by '\"'
+        escaped by ''
         lines terminated by '\\n'
         ({columns});""".format(
             path=file.name,
