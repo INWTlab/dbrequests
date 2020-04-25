@@ -3,7 +3,7 @@
 This is mysql and mariadb compliant.
 """
 from tempfile import NamedTemporaryFile as TmpFile
-from datatable import f, obj64, str64
+from datatable import f, str64
 from dbrequests import Connection as SuperConnection
 
 
@@ -40,9 +40,15 @@ class Connection(SuperConnection):
             self._insert_update(df, table, tmp_table)
 
     def _write_csv(self, df, file):
-        # We have to convert any obj64 types to str64: Frame.to_csv can't
-        # handle obj64 types on it's own.
-        df = df[:, f[:].remove(f[obj64]).extend(str64(f[obj64]))][:, df.names]
+        # Before writing, we need to convert all columns to strings for two
+        # reasons:
+        # - We have to convert any obj64 types to str64: Frame.to_csv can't
+        #   process them.
+        # - We have to replace None with NULL to tell MySQL, that we have
+        #   actual NULL values. An empty cell is sometimes, but not always a
+        #   NULL value. See #30
+        df = df[:, f[:].remove(f[:]).extend(str64(f[:]))][:, df.names]
+        df.replace(None, 'NULL')
         df.to_csv(path=file.name, header=False)
 
     def _infile_csv(self, file, df, table, replace=''):

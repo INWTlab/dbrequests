@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
+from dbrequests.mysql.tests.conftest import set_up_membership as reset_membership
 from sqlalchemy.exc import InternalError
 
 
@@ -204,3 +205,26 @@ class TestBugfixes:
 
         assert res.name[0] == '\\'
         assert res.owner[0] == 'a'
+
+    def test_update_json_and_decimal(self, db):
+        """Insert None/NULL values for json and decimal types: #30"""
+        def is_none(x):
+            """Check that a value is None. == is violating some pep."""
+            if x:
+                return False
+            return True
+
+        reset_membership(db)
+        df_update = pd.DataFrame({
+            'id': range(4),
+            'membership': [
+                '{"BookClub": 1, "SportsClub": 1, "ClubClub": 1,}',
+                '{"BookClub": 0, "SportsClub": 0.5, "ClubClub": 0}',
+                '{"BookClub": null, "SportsClub": 1, "ClubClub": 2}',
+                None],
+            'average': [34.49, 34.51, 43.86, None]})
+
+        db.send_data(df_update, 'membership', mode='truncate')
+        df_in = db.send_query('SELECT * FROM membership')
+        assert is_none(df_in.membership[3])
+        assert np.isnan(df_in.average[3])
