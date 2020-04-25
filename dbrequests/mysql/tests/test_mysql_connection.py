@@ -213,9 +213,8 @@ class TestBugfixes:
         def is_none(x):
             """Check that a value is None. == is violating some pep."""
             if x:
-                return False
+                return np.isnan(x)
             return True
-
         reset_membership(db)
         df_update = pd.DataFrame({
             'id': range(4),
@@ -229,4 +228,4 @@ class TestBugfixes:
         db.send_data(df_update, 'membership', mode='truncate')
         df_in = db.send_query('SELECT * FROM membership')
         assert is_none(df_in.membership[3])
-        assert np.isnan(df_in.average[3])
+        assert is_none(df_in.average[3])
