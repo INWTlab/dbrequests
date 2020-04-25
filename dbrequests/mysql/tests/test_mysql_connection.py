@@ -223,6 +223,12 @@ class TestBugfixes:
 
         db.send_data(df_update, 'membership', mode='truncate')
         df_in = db.send_query('SELECT * FROM membership')
-        # The following is either a np.NaN (mysqldb) or None (pymysql)
-        assert np.isnan(df_in.membership[3]) or df_in.membership[3] is None
+        assert self.is_na(df_in.membership[3])
         assert np.isnan(df_in.average[3])
+
+    @staticmethod
+    def is_na(x):
+        if x:
+            return np.isnan(x)
+        else:
+            return True
