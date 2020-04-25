@@ -203,11 +203,11 @@ class TestBugfixes:
         """Insert some data with escape sequences: #28"""
         reset(db)
         db.send_bulk_query('truncate table cats;')
-        db.send_data({'name': ['\\'], 'owner': ['a']}, 'cats')
+        db.send_data({'name': ['\\'], 'owner': ['0bnrtZN']}, 'cats')
         res = db.send_query('select name, owner from cats;')
 
         assert res.name[0] == '\\'
-        assert res.owner[0] == 'a'
+        assert res.owner[0] == '0bnrtZN'
 
     def test_update_json_and_decimal(self, db):
         """Insert None/NULL values for json and decimal types: #30"""
