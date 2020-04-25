@@ -7,14 +7,15 @@ name = "pypi"
 pandas = "*"
 dbrequests = {editable = true,extras = ["mysql"],path = "."}
 sqlalchemy = "*"
-datatable = "*"
 
 [dev-packages]
 autopep8 = "*"
+datatable = "*"
 docker = "*"
 flake8 = "*"
 ipython = "*"
 mypy = "*"
+mysqlclient = "*"
 pymysql = "*"
 pytest = "*"
 pylint = "*"

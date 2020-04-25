@@ -35,22 +35,16 @@ class Database(object):
                 db = creds['db']
                 dialect = creds.get('dialect', 'mysql')
                 driver = creds.get('driver', 'pymysql')
-                self.db_url = '{}+{}://{}:{}@{}/{}'.format(dialect, driver, user, password, host, db)
+                self.db_url = '{}+{}://{}:{}@{}/{}'.format(
+                    dialect, driver, user, password, host, db)
             except:
                 raise ValueError('You must provide a db_url or proper creds.')
 
         self._escape_percentage = escape_percentage
         self._remove_comments = remove_comments
-        self._open = False
-        self.open(**kwargs)
+        self._engine = create_engine(self.db_url, **kwargs)
+        self._open = True
         self.connection_class = connection_class
-
-    def open(self, **kwargs):
-        """Open a connection."""
-        if not self._open:
-            self._engine = create_engine(self.db_url, **kwargs)
-            self._open = True
-        return self._open
 
     def close(self):
         """Close the connection."""
@@ -100,7 +94,8 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        text = self.__get_query_text(query, escape_percentage, remove_comments, **params)
+        text = self.__get_query_text(
+            query, escape_percentage, remove_comments, **params)
         return self.query(text, **params)
 
     def send_bulk_query(self, query, escape_percentage=None, remove_comments=None, **params):
@@ -115,7 +110,8 @@ class Database(object):
             - the name of a file as string (with or without .sql)
             - a sqlalchemy selectable
         """
-        text = self.__get_query_text(query, escape_percentage, remove_comments, **params)
+        text = self.__get_query_text(
+            query, escape_percentage, remove_comments, **params)
         return self.bulk_query(text, **params)
 
     def send_data(self, df, table, mode='insert', **params):
