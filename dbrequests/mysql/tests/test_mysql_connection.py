@@ -4,7 +4,8 @@ import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
-from dbrequests.mysql.tests.conftest import set_up_membership as reset_membership
+from dbrequests.mysql.tests.conftest import (
+    set_up_membership as reset_membership)
 from sqlalchemy.exc import OperationalError, InternalError
 
 
