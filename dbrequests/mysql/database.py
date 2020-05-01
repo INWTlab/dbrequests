@@ -26,8 +26,17 @@ class Database(SuperDatabase):
     the mysqldb driver, which can be 10x faster than the pymysql driver.
     """
 
-    def __init__(self, db_url=None, creds=None, sql_dir=None,
+    def __init__(self, db_url=None, sql_dir=None,
                  escape_percentage=False, remove_comments=False, **kwargs):
+        super().__init__(
+            db_url=db_url, sql_dir=sql_dir,
+            connection_class=MysqlConnection,
+            escape_percentage=escape_percentage,
+            remove_comments=remove_comments,
+            **kwargs)
+
+    def _init_engine(self, url, **kwargs):
+        # breakpoint()
         connect_args = kwargs.pop('connect_args', {})
         # This option is needed for send data via csv: #20
         connect_args['local_infile'] = connect_args.get('local_infile', 1)
@@ -35,12 +44,8 @@ class Database(SuperDatabase):
         # mysqldb can be difficult to install, so we also support
         # pymysql. Depending on the driver we pick the apropriate cursorclass.
         connect_args['cursorclass'] = connect_args.get(
-            'cursorclass', self._pick_cursorclass(db_url, creds))
-        super().__init__(db_url=db_url, creds=creds, sql_dir=sql_dir,
-                         connection_class=MysqlConnection,
-                         escape_percentage=escape_percentage,
-                         remove_comments=remove_comments,
-                         connect_args=connect_args, **kwargs)
+            'cursorclass', self._pick_cursorclass(url))
+        return super()._init_engine(url, connect_args=connect_args, **kwargs)
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends df to table in database.
@@ -68,21 +73,15 @@ class Database(SuperDatabase):
             return conn.send_data(df, table, mode, **params)
 
     @staticmethod
-    def _pick_cursorclass(url, creds):
+    def _pick_cursorclass(url):
         """
-        Pick the SSCursor for the defined driver in url or creds.
+        Pick the SSCursor for the defined driver in url.
 
         We can easily extract the driver from the sqlalchemy.engine. BUT: we
         want to pass the cursorclass to the create_engine function and hence
         need to extract it beforhand.
         """
-        if creds:
-            driver = creds.get('driver', 'pymysql')
-        elif url:
-            driver = re.findall(r'mysqldb|pymysql', url)[0]
-        else:
-            raise ValueError(
-                'Please provide either a valid db_url or creds object.')
+        driver = re.findall(r'mysqldb|pymysql', url)[0]
         if driver == 'mysqldb':
             from MySQLdb.cursors import SSCursor
         else:

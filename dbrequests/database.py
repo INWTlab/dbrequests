@@ -1,4 +1,5 @@
 import os
+import warnings
 from contextlib import contextmanager
 
 from pandas import DataFrame
@@ -22,29 +23,46 @@ class Database(object):
         - driver (defaults to pymysql)
     """
 
-    def __init__(self, db_url=None, creds=None, sql_dir=None, connection_class=DefaultConnection,
+    def __init__(self, db_url=None, sql_dir=None, connection_class=DefaultConnection,
                  escape_percentage=False, remove_comments=False, **kwargs):
-        # If no db_url was provided, fallback to $DATABASE_URL or creds.
-        self.db_url = db_url or os.environ.get('DATABASE_URL')
-        self.sql_dir = sql_dir or os.getcwd()
-        if not self.db_url:
-            try:
-                user = creds['user']
-                password = creds['password']
-                host = creds['host']
-                db = creds['db']
-                dialect = creds.get('dialect', 'mysql')
-                driver = creds.get('driver', 'pymysql')
-                self.db_url = '{}+{}://{}:{}@{}/{}'.format(
-                    dialect, driver, user, password, host, db)
-            except:
-                raise ValueError('You must provide a db_url or proper creds.')
+        if db_url is None:
+            self.db_url = os.environ.get('DATABASE_URL')
+            if self.db_url is None:
+                db_url = kwargs.pop('creds', None)
+                if db_url:
+                    warnings.warn(
+                        "Parameter 'creds' is depreacated in favor of db_url.",
+                        DeprecationWarning)
+                else:
+                    raise ValueError('db_url is missing')
+        if isinstance(db_url, str):
+            self.db_url = db_url
+        elif isinstance(db_url, dict):
+            db_url = db_url.copy()
+            self.db_url = '{}+{}://{}:{}@{}:{}/{}'.format(
+                db_url.pop('dialect', 'mysql'),
+                db_url.pop('driver', 'pymysql'),
+                db_url.pop('user'),
+                db_url.pop('password'),
+                db_url.pop('host', '127.0.0.1'),
+                db_url.pop('port', 3306),
+                db_url.pop('db'))
+            connect_args = kwargs.pop('connect_args', {})
+            connect_args.update(db_url)
+            if len(connect_args):
+                kwargs['connect_args'] = connect_args
+        else:
+            raise ValueError('db_url has to be a str or dict')
 
+        self.sql_dir = sql_dir or os.getcwd()
         self._escape_percentage = escape_percentage
         self._remove_comments = remove_comments
-        self._engine = create_engine(self.db_url, **kwargs)
+        self._engine = self._init_engine(self.db_url, **kwargs)
         self._open = True
         self.connection_class = connection_class
+
+    def _init_engine(self, url, **kwargs):
+        return create_engine(url, **kwargs)
 
     def close(self):
         """Close the connection."""

@@ -11,7 +11,7 @@ from dbrequests.mysql import Database
 CREDS = {
     'user': 'root',
     'password': 'root',
-    'host': '0.0.0.0:3307',
+    'host': '0.0.0.0',
     'db': 'test',
     'port': 3307
 }
