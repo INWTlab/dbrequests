@@ -10,7 +10,7 @@ from sqlalchemy.exc import OperationalError, InternalError
 
 
 @pytest.mark.usefixtures('db')
-class TestConnection:
+class TestSendDataInsert:
     """Unit Tests for send_data method of a mysql connection."""
 
     def test_insert_happy_path(self, db):
@@ -42,6 +42,11 @@ class TestConnection:
         df_out = db.query("SELECT * FROM cats where id = 3;")
 
         assert df_out.birth.astype(str)[0] == '2016-05-21'
+
+
+@pytest.mark.usefixtures('db')
+class TestSendDataDeletes:
+    """Unit Tests for send_data method of a mysql connection."""
 
     def test_send_data_truncate(self, db):
         """Truncate table before insert."""
@@ -95,6 +100,11 @@ class TestConnection:
         df_nrow = db.query("SELECT count(*) as nrows FROM cats;")
         assert df_nrow.nrows[0] == 3
 
+
+@pytest.mark.usefixtures('db')
+class TestSendDataReplace:
+    """Unit Tests for send_data method of a mysql connection."""
+
     def test_send_data_replace(self, db):
         """Send data and replace on duplicate key."""
         df_replace = pd.DataFrame({
@@ -114,31 +124,9 @@ class TestConnection:
         df_out.birth = df_out.birth.astype(str)
         assert (df_replace == df_out).all(axis=None)
 
-    def test_send_data_idempotence(self, db):
-        """We check that reading and writing back in is idempotent.
 
-        This is not obvious because we write to a CSV as intermediate step!
-        Special cases, we need to check:
-        - missing values
-        - dates / (datetimes)
-        - (decimals)
-        - (64bit integer)
-        TODO: Currently we hold hands and pray that these cases actually work!
-        """
-        df_replace = pd.DataFrame({
-            'id': [1],
-            'name': ['Chill'],
-            'owner': [np.nan],
-            'birth': ['2018-03-03']
-        })
-
-        reset(db)
-        db.send_data(df_replace, 'cats', mode='replace')
-        df_in = db.query("SELECT * FROM cats;")
-        db.send_data(df_in, 'cats', mode='truncate')
-        df_inn = db.query("SELECT * FROM cats;")
-
-        assert (df_in == df_inn).all(axis=None)
+@pytest.mark.usefixtures('db')
+class TestSendDataUpdate:
 
     def test_send_data_update(self, db):
         """Check for mode update.
@@ -186,8 +174,34 @@ class TestConnection:
 
 
 @pytest.mark.usefixtures('db')
-class TestBugfixes:
-    """Unit Tests after bugs."""
+class TestSendDataBehaviours:
+    """Behaviours which are due to CSV and work for all modes."""
+
+    def test_send_data_idempotence(self, db):
+        """We check that reading and writing back in is idempotent.
+
+        This is not obvious because we write to a CSV as intermediate step!
+        Special cases, we need to check:
+        - missing values
+        - dates / (datetimes)
+        - (decimals)
+        - (64bit integer)
+        TODO: Currently we hold hands and pray that these cases actually work!
+        """
+        df_replace = pd.DataFrame({
+            'id': [1],
+            'name': ['Chill'],
+            'owner': [np.nan],
+            'birth': ['2018-03-03']
+        })
+
+        reset(db)
+        db.send_data(df_replace, 'cats', mode='replace')
+        df_in = db.query("SELECT * FROM cats;")
+        db.send_data(df_in, 'cats', mode='truncate')
+        df_inn = db.query("SELECT * FROM cats;")
+
+        assert (df_in == df_inn).all(axis=None)
 
     def test_column_arrangemant_is_maintained(self, db):
         """Insert some data with fliped columns: #24"""
@@ -207,13 +221,8 @@ class TestBugfixes:
         res = db.send_query('select name, owner from cats;')
 
         assert res.name[0] == '\\'
-        assert res.owner[0] == 'a'
-
-    def test_empty_result_set(self, db):
-        """Dealing with empty result sets: #32"""
-        reset(db)
-        res = db.send_query('select * from cats where id < 0')
-        assert res.shape == (0, 4)
+        # all known escape sequences from:
+        #   https://dev.mysql.com/doc/refman/8.0/en/load-data.html
         assert res.owner[0] == '0bnrtZN'
 
     def test_update_json_and_decimal(self, db):
