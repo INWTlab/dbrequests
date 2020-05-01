@@ -14,4 +14,6 @@ class TestSendQueryBehaviours:
         """Dealing with empty result sets: #32"""
         reset(db)
         res = db.send_query('select * from cats where id < 0')
+        res.columns.values
         assert res.shape == (0, 4)
+        assert all(res.columns.values == ['id', 'name', 'owner', 'birth'])
