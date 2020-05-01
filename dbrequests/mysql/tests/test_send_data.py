@@ -1,4 +1,4 @@
-"""Tests against mariadb database."""
+"""Testing send_data functionality."""
 
 import pandas as pd
 import pytest
@@ -11,7 +11,7 @@ from sqlalchemy.exc import OperationalError, InternalError
 
 @pytest.mark.usefixtures('db')
 class TestSendDataInsert:
-    """Unit Tests for send_data method of a mysql connection."""
+    """Tests for mode=insert."""
 
     def test_insert_happy_path(self, db):
         """Insert some data and check, that it is actually there."""
@@ -46,7 +46,7 @@ class TestSendDataInsert:
 
 @pytest.mark.usefixtures('db')
 class TestSendDataDeletes:
-    """Unit Tests for send_data method of a mysql connection."""
+    """Tests for mode=delete|truncate."""
 
     def test_send_data_truncate(self, db):
         """Truncate table before insert."""
@@ -103,7 +103,7 @@ class TestSendDataDeletes:
 
 @pytest.mark.usefixtures('db')
 class TestSendDataReplace:
-    """Unit Tests for send_data method of a mysql connection."""
+    """Tests for mode=replace."""
 
     def test_send_data_replace(self, db):
         """Send data and replace on duplicate key."""
@@ -127,6 +127,7 @@ class TestSendDataReplace:
 
 @pytest.mark.usefixtures('db')
 class TestSendDataUpdate:
+    """Tests for mode=update."""
 
     def test_send_data_update(self, db):
         """Check for mode update.
