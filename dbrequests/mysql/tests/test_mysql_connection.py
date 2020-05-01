@@ -206,3 +206,9 @@ class TestBugfixes:
 
         assert res.name[0] == '\\'
         assert res.owner[0] == 'a'
+
+    def test_empty_result_set(self, db):
+        """Dealing with empty result sets: #32"""
+        reset(db)
+        res = db.send_query('select * from cats where id < 0')
+        assert res.shape == (0, 4)

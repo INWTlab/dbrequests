@@ -37,3 +37,7 @@
   - dbrequests.mysql:
     - see #22 for performance improvements for send_query when reading large datasets
     - support for pymysql and mysqldb
+
+## Version 1.3.13
+  - dbrequests.mysql:
+    - see #32 for bugfix in send_query for empty result sets
