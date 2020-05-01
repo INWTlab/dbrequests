@@ -112,7 +112,10 @@ class Connection(SuperConnection):
                     break
                 res.append(Frame(result))
         frame = rbind(res, bynames=False)
-        frame.names = fields
+        if frame.shape == (0, 0):
+            frame = Frame({n: [] for n in fields})
+        else:
+            frame.names = fields
         if to_pandas:
             frame = frame.to_pandas()
         return frame
