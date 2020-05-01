@@ -84,6 +84,25 @@ def set_up_cats(db):
         """)
 
 
+def set_up_membership(db):
+    db.bulk_query("""
+    CREATE TABLE IF NOT EXISTS `membership`
+        (
+            `id` int(10) unsigned NOT NULL,
+            `membership` json DEFAULT NULL,
+            `average` decimal(3, 2) DEFAULT NULL,
+            PRIMARY KEY(`id`)
+        ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """)
+    db.bulk_query("""
+    TRUNCATE TABLE membership;
+    """)
+    db.bulk_query("""
+    INSERT INTO membership (id, membership, average) VALUES
+        ( 1, '{"BookClub": 1, "SportsClub": 1, "ClubClub": 1}', 1.03 )
+    """)
+
+
 @pytest.fixture(scope="module", autouse=True)
 def container_controller(request):
     """Startup database fixture."""

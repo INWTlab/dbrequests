@@ -39,5 +39,9 @@
     - support for pymysql and mysqldb
 
 ## Version 1.3.13
+  - dbrequests.mysql
+    - see #30: fixes handling of None/NULL values in columns
+
+## Version 1.3.14
   - dbrequests.mysql:
     - see #32 for bugfix in send_query for empty result sets

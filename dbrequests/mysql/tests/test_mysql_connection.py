@@ -4,6 +4,8 @@ import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
+from dbrequests.mysql.tests.conftest import (
+    set_up_membership as reset_membership)
 from sqlalchemy.exc import OperationalError, InternalError
 
 
@@ -201,7 +203,7 @@ class TestBugfixes:
         """Insert some data with escape sequences: #28"""
         reset(db)
         db.send_bulk_query('truncate table cats;')
-        db.send_data({'name': ['\\'], 'owner': ['a']}, 'cats')
+        db.send_data({'name': ['\\'], 'owner': ['0bnrtZN']}, 'cats')
         res = db.send_query('select name, owner from cats;')
 
         assert res.name[0] == '\\'
@@ -212,3 +214,28 @@ class TestBugfixes:
         reset(db)
         res = db.send_query('select * from cats where id < 0')
         assert res.shape == (0, 4)
+        assert res.owner[0] == '0bnrtZN'
+
+    def test_update_json_and_decimal(self, db):
+        """Insert None/NULL values for json and decimal types: #30"""
+        reset_membership(db)
+        df_update = pd.DataFrame({
+            'id': range(4),
+            'membership': [
+                '{"BookClub": 1, "SportsClub": 1, "ClubClub": 1,}',
+                '{"BookClub": 0, "SportsClub": 0.5, "ClubClub": 0}',
+                '{"BookClub": null, "SportsClub": 1, "ClubClub": 2}',
+                None],
+            'average': [34.49, 34.51, 43.86, None]})
+
+        db.send_data(df_update, 'membership', mode='truncate')
+        df_in = db.send_query('SELECT * FROM membership')
+        assert self.is_na(df_in.membership[3])
+        assert np.isnan(df_in.average[3])
+
+    @staticmethod
+    def is_na(x):
+        if x:
+            return np.isnan(x)
+        else:
+            return True
