@@ -20,7 +20,7 @@ CREDS = {
 @pytest.yield_fixture(scope='module', params=['pymysql', 'mysqldb'])
 def db(request):
     """Create instances of database connections."""
-    creds = CREDS
+    creds = CREDS.copy()
     creds['driver'] = request.param
     db = Database(creds)
     try:
@@ -34,7 +34,7 @@ def db(request):
 @pytest.fixture(scope="module")
 def db_connect_args(request):
     """Create instance with connect args."""
-    creds = CREDS
+    creds = CREDS.copy()
     creds['driver'] = 'pymysql'
     # switch local_infile off so we can see that:
     # - override of defaults work
