@@ -22,7 +22,26 @@ def db(request):
     """Create instances of database connections."""
     creds = CREDS
     creds['driver'] = request.param
-    db = Database(creds=creds)
+    db = Database(creds)
+    try:
+        yield db
+    except BaseException as error:
+        raise error
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="module")
+def db_connect_args(request):
+    """Create instance with connect args."""
+    creds = CREDS
+    creds['driver'] = 'pymysql'
+    # switch local_infile off so we can see that:
+    # - override of defaults work
+    # - connect_args is appended from creds object
+    # - we expect working send_query and failing send_data
+    creds['local_infile'] = 0
+    db = Database(creds)
     try:
         yield db
     except BaseException as error:
@@ -33,7 +52,6 @@ def db(request):
 
 def run_docker_container():
     """Run mariadb-docker container and return proper url for access."""
-
     client = from_env()
     try:
         container = client.containers.run(
@@ -49,7 +67,6 @@ def run_docker_container():
         time.sleep(60)
     except APIError:
         container = client.containers.get('test-mariadb-database')
-
     return container
 
 
