@@ -36,7 +36,6 @@ class Database(SuperDatabase):
             **kwargs)
 
     def _init_engine(self, url, **kwargs):
-        # breakpoint()
         connect_args = kwargs.pop('connect_args', {})
         # This option is needed for send data via csv: #20
         connect_args['local_infile'] = connect_args.get('local_infile', 1)
