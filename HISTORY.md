@@ -45,3 +45,7 @@
 ## Version 1.3.14
   - dbrequests.mysql:
     - see #32 for bugfix in send_query for empty result sets
+
+## Version 1.3.15
+  - dbrequests.mysql
+    - see #36 for bugfix while sending an empty frame
