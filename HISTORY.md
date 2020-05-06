@@ -45,6 +45,8 @@
 ## Version 1.3.14
   - dbrequests.mysql:
     - see #32 for bugfix in send_query for empty result sets
+
+## Version 1.3.15
   - dbrequests:
     - see #27 for bugfix in Database class when specifiying a port in a
       credentials object.
