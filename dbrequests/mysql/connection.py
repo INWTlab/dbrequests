@@ -6,9 +6,8 @@ compliant.
 from inspect import getfullargspec as getargs
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
-from datatable import f, str64
+from datatable import dt, f, str64, Frame, rbind, join
 from dbrequests import Connection as SuperConnection
-from datatable import Frame, rbind
 
 
 class Connection(SuperConnection):
@@ -43,6 +42,18 @@ class Connection(SuperConnection):
             self._send_data_insert(df, tmp_table)
             self._insert_update(df, table, tmp_table)
 
+    def _send_data_update_diffs(self, df, table, **params):
+        diffs = self._make_diffs(df, table, **params)
+        self._send_data_update(diffs, table)
+
+    def _send_data_insert_diffs(self, df, table, **params):
+        diffs = self._make_diffs(df, table, **params)
+        self._send_data_insert(diffs, table)
+
+    def _send_data_replace_diffs(self, df, table, **params):
+        diffs = self._make_diffs(df, table, **params)
+        self._send_data_replace(diffs, table)
+
     def _write_csv(self, df, file):
         # Before writing, we need to convert all columns to strings for two
         # reasons:
@@ -69,7 +80,7 @@ class Connection(SuperConnection):
             path=file.name,
             replace=replace,
             table=table,
-            columns=self._sql_cols(df)))
+            columns=self._sql_cols(df.names)))
 
     def _insert_update(self, df, table, tmp_table):
         self.bulk_query('''
@@ -78,13 +89,13 @@ class Connection(SuperConnection):
         from `{tmp_table}`
         on duplicate key update {update};'''.format(
             table=table,
-            columns=self._sql_cols(df),
+            columns=self._sql_cols(df.names),
             tmp_table=tmp_table,
             update=self._sql_update(df)))
 
     @staticmethod
-    def _sql_cols(df):
-        cols = ', '.join(['`' + str(name) + '`' for name in df.names])
+    def _sql_cols(names):
+        cols = ', '.join(['`' + str(name) + '`' for name in names])
         return cols
 
     @staticmethod
@@ -119,6 +130,46 @@ class Connection(SuperConnection):
         if to_pandas:
             frame = frame.to_pandas()
         return frame
+
+    def _make_diffs(self, df, table, keys=None, in_range=None,
+                    chunksize=10000000):
+        # Here is the strategy to construct diffs:
+        # - pull down the complete target table
+        # - to spare memory we do this chunkwise
+        # - for each chunk, do a left join on the column set 'keys'
+        # - drop the matched lines
+        # - repeat
+        # Dealing with input params:
+        if keys is None:
+            keys = df.names
+        if in_range:
+            where = 'where `{col}` >= {min} and `{col}` <= {max}'.format(
+                col=in_range,
+                min=df[:, dt.min(f[in_range])][0, 0],
+                max=df[:, dt.max(f[in_range])][0, 0],
+            )
+        else:
+            where = ''
+        # Executing the strategy:
+        df.key = keys
+        with self._cursor() as cursor:
+            cursor.execute('select {cols} from {table} {where};'.format(
+                cols=self._sql_cols(keys), table=table, where=where))
+            while True:
+                result = cursor.fetchmany(chunksize)
+                if not result:
+                    break
+                # prepare the results
+                result = Frame(result)
+                result.names = keys
+                result = result[:, f[:].extend({'__a__': 1})]
+                result.key = keys
+                # do the join
+                df = df[:, :, join(result)]
+                # remove the duplicates
+                del df[f.__a__ == 1, :]
+                del df[:, '__a__']
+        return df
 
     @contextmanager
     def _cursor(self):
