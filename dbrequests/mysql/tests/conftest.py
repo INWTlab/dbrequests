@@ -101,6 +101,18 @@ def set_up_cats(db):
         """)
 
 
+def set_up_diffs(db):
+    db.bulk_query("""
+    CREATE TABLE IF NOT EXISTS `diffs` (
+        `id` bigint(20) NOT NULL AUTO_INCREMENT,
+        `value` varchar(100) NOT NULL,
+        `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=2
+    """)
+    db.bulk_query('TRUNCATE TABLE diffs')
+
+
 def set_up_membership(db):
     db.bulk_query("""
     CREATE TABLE IF NOT EXISTS `membership`
