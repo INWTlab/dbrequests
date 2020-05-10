@@ -85,9 +85,6 @@ class Database(object):
         # process.
         self._engine = create_engine(self.db_url, **kwargs)
 
-    def _init_engine(self, url, **kwargs):
-        return create_engine(url, **kwargs)
-
     def close(self):
         """Close the connection."""
         self._engine.dispose()
@@ -110,15 +107,9 @@ class Database(object):
         """Get a connection from the sqlalchemy engine."""
         if not self._open:
             raise exc.ResourceClosedError('Database closed.')
+        return self._connection_class(self._engine.connect())
 
-
-<< << << < HEAD
-   return self.connection_class(self._engine.connect())
-== == == =
-   return self._connection_class(self._engine.connect())
->>>>>> > master
-
-   def __get_query_text(self, query, escape_percentage, remove_comments, **params):
+    def __get_query_text(self, query, escape_percentage, remove_comments, **params):
         """Private wrapper for accessing the text of the query."""
         escape_percentage = escape_percentage or self._escape_percentage
         remove_comments = remove_comments or self._remove_comments
