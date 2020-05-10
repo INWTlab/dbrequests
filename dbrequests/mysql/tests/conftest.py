@@ -132,7 +132,7 @@ def set_up_membership(db):
     """)
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="package", autouse=True)
 def container_controller(request):
     """Startup database fixture."""
     container = run_docker_container()
