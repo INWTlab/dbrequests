@@ -29,9 +29,6 @@ class Database(object):
             - ...: further fields are added to 'connect_args'
     - sql_dir: (str|None) directory where to look for sql queries. Defaults to
       '.'.
-    - connection_class: (Connection) a connection class may be provided in
-      cases where default behaviours need to be extended. I.e. add a new 'mode'
-      in send_data.
     - escape_percentage: (bool) escape percentages when reading queries from a
       file.
     - remove_comments: (bool) remove comments when reading queries from a file.
