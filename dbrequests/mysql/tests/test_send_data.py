@@ -22,7 +22,7 @@ class TestSendDataDiffs:
             'id': [1, 2, 3],
             'value': ['a', 'b', 'c']
         })
-        breakpoint()
+
         # testing on empty table/result set:
         db.send_data(df, 'diffs', mode='insert_diffs')
 
