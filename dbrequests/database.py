@@ -47,7 +47,7 @@ class Database(object):
             db_url = os.environ.get('DATABASE_URL')
             if db_url is None:
                 db_url = kwargs.pop('creds', None)
-                if db_url:
+                if db_url is not None:
                     warnings.warn(
                         "Parameter 'creds' is depreacated in favor of db_url.",
                         DeprecationWarning)
