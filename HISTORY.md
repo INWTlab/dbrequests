@@ -56,3 +56,7 @@
       sqlalchemy url; a dict a credentials object
     - credential objects can now have additional fields which will be used as
       elements in connect_args for sqlalchemies create_engine: see #12
+
+## Version 1.3.16
+  - dbrequests.mysql
+    - see #35: New send_data modes: update_diffs, insert_diffs, replace_diffs

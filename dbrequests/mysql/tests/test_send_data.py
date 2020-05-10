@@ -1,12 +1,58 @@
 """Testing send_data functionality."""
 
+import time
 import pandas as pd
 import pytest
 import numpy as np
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
 from dbrequests.mysql.tests.conftest import (
-    set_up_membership as reset_membership)
+    set_up_membership as reset_membership,
+    set_up_diffs as reset_diffs)
 from sqlalchemy.exc import OperationalError, InternalError
+
+
+@pytest.mark.usefixtures('db')
+class TestSendDataDiffs:
+    """Tests for mode=[update|replace|insert]_diffs."""
+
+    def test_sending_only_diffs(self, db):
+        """Construct diffs."""
+        reset_diffs(db)
+        df = pd.DataFrame({
+            'id': [1, 2, 3],
+            'value': ['a', 'b', 'c']
+        })
+        breakpoint()
+        # testing on empty table/result set:
+        db.send_data(df, 'diffs', mode='insert_diffs')
+
+        # - expect a new row in the table
+        # - if the complete set would be transmitted, we would have one
+        #   timestamp; when only the diffs are transmitted, we expect 2
+        df = df.append(pd.DataFrame({'id': [4, 5], 'value': 'd'}))
+        time.sleep(1)
+        db.send_data(df, 'diffs', mode='replace_diffs')
+        res = db.send_query('select * from diffs')
+        assert res.shape == (5, 3)
+        assert res.updated.nunique() == 2
+
+        # - expect a modified value
+        # - expect a new timestamp for existing row, because we replace
+        df['value'][1] = 'a'  # new value
+        time.sleep(1)
+        db.send_data(df, 'diffs', mode='replace_diffs')
+        res = db.send_query('select * from diffs')
+        assert res.updated.nunique() == 3
+        assert res.value[1] == 'a'
+
+        # - expect a modified value
+        # - expect no new timestamp
+        df['value'][1] = 'c'  # new value
+        time.sleep(1)
+        db.send_data(df, 'diffs', mode='update_diffs')
+        res = db.send_query('select * from diffs')
+        assert res.updated.nunique() == 3
+        assert res.value[1] == 'c'
 
 
 @pytest.mark.usefixtures('db')

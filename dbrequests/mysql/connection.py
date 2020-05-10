@@ -153,13 +153,13 @@ class Connection(SuperConnection):
         # Executing the strategy:
         df.key = keys
         with self._cursor() as cursor:
-            cursor.execute('select {cols} from {table} {where};'.format(
+            cursor.execute('select distinct {cols} from {table} {where};'.format(
                 cols=self._sql_cols(keys), table=table, where=where))
             while True:
                 result = cursor.fetchmany(chunksize)
                 if not result:
                     break
-                # prepare the results
+                # prepare the data
                 result = Frame(result)
                 result.names = keys
                 result = result[:, f[:].extend({'__a__': 1})]
