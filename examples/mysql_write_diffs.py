@@ -1,3 +1,7 @@
+"""
+These are some of the tests to build the 'send only diffs' feature.
+"""
+
 from datatable import f, Frame
 import string
 import time
@@ -63,12 +67,13 @@ with mysql.Database(URL) as db:
         char1 VARCHAR(8) NOT NULL,
         char2 VARCHAR(8) NOT NULL,
         num1 INTEGER NOT NULL,
-        num2 INTEGER NOT NULL
+        num2 INTEGER NOT NULL,
+        PRIMARY KEY (`id`)
     )
-    PRIMARY KEY (`id`)
     ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4;
     """)
+
 
 # With ~ 25% rows changed:
 DF_NEW = DF.copy()
@@ -83,7 +88,7 @@ with mysql.Database(URL) as db:
 with mysql.Database(URL) as db:
     db.send_data(DF, 'some_table', mode='truncate')
     time.sleep(200)
-    with Stopwatch('Send update diffs'):
+    with Stopwatch('Send update diffs: 25%'):
         db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
 # With ~5% changes
@@ -92,16 +97,16 @@ DF_NEW[f.id < NROW * 0.1, 4] = 1
 with mysql.Database(URL) as db:
     db.send_data(DF, 'some_table', mode='truncate')
     time.sleep(200)
-    with Stopwatch('Send only diffs'):
+    with Stopwatch('Send only diffs: 5%'):
         db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
 # With ~2.5% changes
 DF_NEW = DF.copy()
-DF_NEW[f.id < NROW * 0.5, 4] = 1
+DF_NEW[f.id < NROW * 0.05, 4] = 1
 with mysql.Database(URL) as db:
     db.send_data(DF, 'some_table', mode='truncate')
     time.sleep(200)
-    with Stopwatch('Send only diffs'):
+    with Stopwatch('Send only diffs: 2.5%'):
         db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
 CONTAINER.kill()
