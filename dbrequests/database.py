@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pandas import DataFrame
 from sqlalchemy import create_engine, exc, inspect
 
-from .connection import Connection as DefaultConnection
+from .connection import Connection
 from .query import Query
 
 
@@ -40,8 +40,9 @@ class Database(object):
         - ...: all arguments are passed to sqlalchemy.create_engine
     """
 
+    _connection_class = Connection
+
     def __init__(self, db_url=None, sql_dir=None,
-                 connection_class=DefaultConnection,
                  escape_percentage=False, remove_comments=False, **kwargs):
 
         self.sql_dir = sql_dir or os.getcwd()
@@ -50,7 +51,6 @@ class Database(object):
         kwargs = self._init_db_url(db_url, **kwargs)
         self._init_engine(**kwargs)
         self._open = True
-        self.connection_class = connection_class
 
     def _init_db_url(self, db_url, **kwargs):
         if db_url is None:
@@ -110,7 +110,7 @@ class Database(object):
         """Get a connection from the sqlalchemy engine."""
         if not self._open:
             raise exc.ResourceClosedError('Database closed.')
-        return self.connection_class(self._engine.connect())
+        return self._connection_class(self._engine.connect())
 
     def __get_query_text(self, query, escape_percentage, remove_comments, **params):
         """Private wrapper for accessing the text of the query."""

@@ -26,14 +26,7 @@ class Database(SuperDatabase):
     the mysqldb driver, which can be 10x faster than the pymysql driver.
     """
 
-    def __init__(self, db_url=None, sql_dir=None,
-                 escape_percentage=False, remove_comments=False, **kwargs):
-        super().__init__(
-            db_url=db_url, sql_dir=sql_dir,
-            connection_class=MysqlConnection,
-            escape_percentage=escape_percentage,
-            remove_comments=remove_comments,
-            **kwargs)
+    _connection_class = MysqlConnection
 
     def _init_engine(self, **kwargs):
         connect_args = kwargs.pop('connect_args', {})
