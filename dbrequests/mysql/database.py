@@ -42,22 +42,21 @@ class Database(SuperDatabase):
     def send_data(self, df, table, mode='insert', **params):
         """Sends df to table in database.
 
-        Args:
-            - df (DataFrame): internally we use datatable Frame. Any object
-            that can be converted to a Frame may be supplied.
-            - table_name (str): Name of the table.
-            - mode ({'insert', 'truncate', 'replace',
-            'update'}): Mode of Data Insertion. Defaults to 'insert'.
-                - 'insert': appends data. Duplicates in the
-                primary keys are not replaced.
-                - 'truncate': drop the table, recreate it, then insert. No
-                rollback on error.
-                - 'delete': delete all rows in the table, then insert. This
-                operation can be rolled back on error, but can be very
-                expensive.
-                - 'replace': replaces (delete, then insert) duplicate primary
-                keys.
-                - 'update': updates duplicate primary keys
+        - df (DataFrame): internally we use datatable Frame. Any object
+        that can be converted to a Frame may be supplied.
+        - table_name (str): Name of the table.
+        - mode ({'insert', 'truncate', 'replace',
+        'update'}): Mode of Data Insertion. Defaults to 'insert'.
+            - 'insert': appends data. Duplicates in the
+            primary keys are not replaced.
+            - 'truncate': drop the table, recreate it, then insert. No
+            rollback on error.
+            - 'delete': delete all rows in the table, then insert. This
+            operation can be rolled back on error, but can be very
+            expensive.
+            - 'replace': replaces (delete, then insert) duplicate primary
+            keys.
+            - 'update': insert but with update on duplicate primary keys
         """
         if not isinstance(df, Frame):
             df = Frame(df)
