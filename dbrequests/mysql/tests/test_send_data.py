@@ -224,6 +224,14 @@ class TestSendDataUpdate:
 class TestSendDataBehaviours:
     """Behaviours which are due to CSV and work for all modes."""
 
+    def test_send_empty_data_frame(self, db):
+        """
+        We need to check that we can handle empty data frames in send data. See
+        #36.
+        """
+        res = db.send_query('select * from cats where id < 0')
+        assert db.send_data(res, 'cats') is None
+
     def test_send_data_idempotence(self, db):
         """We check that reading and writing back in is idempotent.
 

@@ -26,16 +26,9 @@ class Database(SuperDatabase):
     the mysqldb driver, which can be 10x faster than the pymysql driver.
     """
 
-    def __init__(self, db_url=None, sql_dir=None,
-                 escape_percentage=False, remove_comments=False, **kwargs):
-        super().__init__(
-            db_url=db_url, sql_dir=sql_dir,
-            connection_class=MysqlConnection,
-            escape_percentage=escape_percentage,
-            remove_comments=remove_comments,
-            **kwargs)
+    _connection_class = MysqlConnection
 
-    def _init_engine(self, url, **kwargs):
+    def _init_engine(self, **kwargs):
         connect_args = kwargs.pop('connect_args', {})
         # This option is needed for send data via csv: #20
         connect_args['local_infile'] = connect_args.get('local_infile', 1)
@@ -43,31 +36,33 @@ class Database(SuperDatabase):
         # mysqldb can be difficult to install, so we also support
         # pymysql. Depending on the driver we pick the apropriate cursorclass.
         connect_args['cursorclass'] = connect_args.get(
-            'cursorclass', self._pick_cursorclass(url))
-        return super()._init_engine(url, connect_args=connect_args, **kwargs)
+            'cursorclass', self._pick_cursorclass(self.db_url))
+        super()._init_engine(connect_args=connect_args, **kwargs)
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends df to table in database.
 
-        Args:
-            - df (DataFrame): internally we use datatable Frame. Any object
-            that can be converted to a Frame may be supplied.
-            - table_name (str): Name of the table.
-            - mode ({'insert', 'truncate', 'replace',
-            'update'}): Mode of Data Insertion. Defaults to 'insert'.
-                - 'insert': appends data. Duplicates in the
-                primary keys are not replaced.
-                - 'truncate': drop the table, recreate it, then insert. No
-                rollback on error.
-                - 'delete': delete all rows in the table, then insert. This
-                operation can be rolled back on error, but can be very
-                expensive.
-                - 'replace': replaces (delete, then insert) duplicate primary
-                keys.
-                - 'update': updates duplicate primary keys
+        - df (DataFrame): internally we use datatable Frame. Any object
+        that can be converted to a Frame may be supplied.
+        - table_name (str): Name of the table.
+        - mode ({'insert', 'truncate', 'replace',
+        'update'}): Mode of Data Insertion. Defaults to 'insert'.
+            - 'insert': appends data. Duplicates in the
+            primary keys are not replaced.
+            - 'truncate': drop the table, recreate it, then insert. No
+            rollback on error.
+            - 'delete': delete all rows in the table, then insert. This
+            operation can be rolled back on error, but can be very
+            expensive.
+            - 'replace': replaces (delete, then insert) duplicate primary
+            keys.
+            - 'update': insert but with update on duplicate primary keys
         """
         if not isinstance(df, Frame):
             df = Frame(df)
+        # circumventing bug in datatable: see #36
+        if df.shape[0] == 0:
+            return None
         with self.transaction() as conn:
             return conn.send_data(df, table, mode, **params)
 

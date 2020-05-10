@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pandas import DataFrame
 from sqlalchemy import create_engine, exc, inspect
 
-from .connection import Connection as DefaultConnection
+from .connection import Connection
 from .query import Query
 
 
@@ -29,9 +29,6 @@ class Database(object):
             - ...: further fields are added to 'connect_args'
     - sql_dir: (str|None) directory where to look for sql queries. Defaults to
       '.'.
-    - connection_class: (Connection) a connection class may be provided in
-      cases where default behaviours need to be extended. I.e. add a new 'mode'
-      in send_data.
     - escape_percentage: (bool) escape percentages when reading queries from a
       file.
     - remove_comments: (bool) remove comments when reading queries from a file.
@@ -40,14 +37,24 @@ class Database(object):
         - ...: all arguments are passed to sqlalchemy.create_engine
     """
 
+    _connection_class = Connection
+
     def __init__(self, db_url=None, sql_dir=None,
-                 connection_class=DefaultConnection,
                  escape_percentage=False, remove_comments=False, **kwargs):
+
+        self.sql_dir = sql_dir or os.getcwd()
+        self._escape_percentage = escape_percentage
+        self._remove_comments = remove_comments
+        kwargs = self._init_db_url(db_url, **kwargs)
+        self._init_engine(**kwargs)
+        self._open = True
+
+    def _init_db_url(self, db_url, **kwargs):
         if db_url is None:
             db_url = os.environ.get('DATABASE_URL')
             if db_url is None:
                 db_url = kwargs.pop('creds', None)
-                if db_url:
+                if db_url is not None:
                     warnings.warn(
                         "Parameter 'creds' is depreacated in favor of db_url.",
                         DeprecationWarning)
@@ -71,13 +78,12 @@ class Database(object):
                 kwargs['connect_args'] = connect_args
         else:
             raise ValueError('db_url has to be a str or dict')
+        return kwargs
 
-        self.sql_dir = sql_dir or os.getcwd()
-        self._escape_percentage = escape_percentage
-        self._remove_comments = remove_comments
-        self._engine = self._init_engine(self.db_url, **kwargs)
-        self._open = True
-        self.connection_class = connection_class
+    def _init_engine(self, **kwargs):
+        # We have this method, so that subclasses may override the init
+        # process.
+        self._engine = create_engine(self.db_url, **kwargs)
 
     def _init_engine(self, url, **kwargs):
         return create_engine(url, **kwargs)
@@ -104,9 +110,15 @@ class Database(object):
         """Get a connection from the sqlalchemy engine."""
         if not self._open:
             raise exc.ResourceClosedError('Database closed.')
-        return self.connection_class(self._engine.connect())
 
-    def __get_query_text(self, query, escape_percentage, remove_comments, **params):
+
+<< << << < HEAD
+   return self.connection_class(self._engine.connect())
+== == == =
+   return self._connection_class(self._engine.connect())
+>>>>>> > master
+
+   def __get_query_text(self, query, escape_percentage, remove_comments, **params):
         """Private wrapper for accessing the text of the query."""
         escape_percentage = escape_percentage or self._escape_percentage
         remove_comments = remove_comments or self._remove_comments
