@@ -35,7 +35,7 @@ class Database(SuperDatabase):
             remove_comments=remove_comments,
             **kwargs)
 
-    def _init_engine(self, url, **kwargs):
+    def _init_engine(self, **kwargs):
         connect_args = kwargs.pop('connect_args', {})
         # This option is needed for send data via csv: #20
         connect_args['local_infile'] = connect_args.get('local_infile', 1)
@@ -43,8 +43,8 @@ class Database(SuperDatabase):
         # mysqldb can be difficult to install, so we also support
         # pymysql. Depending on the driver we pick the apropriate cursorclass.
         connect_args['cursorclass'] = connect_args.get(
-            'cursorclass', self._pick_cursorclass(url))
-        return super()._init_engine(url, connect_args=connect_args, **kwargs)
+            'cursorclass', self._pick_cursorclass(self.db_url))
+        super()._init_engine(connect_args=connect_args, **kwargs)
 
     def send_data(self, df, table, mode='insert', **params):
         """Sends df to table in database.

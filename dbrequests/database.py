@@ -43,6 +43,16 @@ class Database(object):
     def __init__(self, db_url=None, sql_dir=None,
                  connection_class=DefaultConnection,
                  escape_percentage=False, remove_comments=False, **kwargs):
+
+        self.sql_dir = sql_dir or os.getcwd()
+        self._escape_percentage = escape_percentage
+        self._remove_comments = remove_comments
+        kwargs = self._init_db_url(db_url, **kwargs)
+        self._init_engine(**kwargs)
+        self._open = True
+        self.connection_class = connection_class
+
+    def _init_db_url(self, db_url, **kwargs):
         if db_url is None:
             db_url = os.environ.get('DATABASE_URL')
             if db_url is None:
@@ -71,16 +81,12 @@ class Database(object):
                 kwargs['connect_args'] = connect_args
         else:
             raise ValueError('db_url has to be a str or dict')
+        return kwargs
 
-        self.sql_dir = sql_dir or os.getcwd()
-        self._escape_percentage = escape_percentage
-        self._remove_comments = remove_comments
-        self._engine = self._init_engine(self.db_url, **kwargs)
-        self._open = True
-        self.connection_class = connection_class
-
-    def _init_engine(self, url, **kwargs):
-        return create_engine(url, **kwargs)
+    def _init_engine(self, **kwargs):
+        # We have this method, so that subclasses may override the init
+        # process.
+        self._engine = create_engine(self.db_url, **kwargs)
 
     def close(self):
         """Close the connection."""
