@@ -47,5 +47,14 @@
     - see #32 for bugfix in send_query for empty result sets
 
 ## Version 1.3.15
+  - dbrequests:
+    - see #27 for bugfix in Database class when specifiying a port in a
+      credentials object.
+    - the argument 'creds' in the init method of a database class is now
+      deprecated
+    - the argument 'db_url' can now handle str and dict type; str is a
+      sqlalchemy url; a dict a credentials object
+    - credential objects can now have additional fields which will be used as
+      elements in connect_args for sqlalchemies create_engine: see #12
   - dbrequests.mysql
     - see #36 for bugfix while sending an empty frame

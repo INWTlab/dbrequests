@@ -1,50 +1,89 @@
 import os
+import warnings
 from contextlib import contextmanager
 
 from pandas import DataFrame
 from sqlalchemy import create_engine, exc, inspect
 
-from .connection import Connection as DefaultConnection
+from .connection import Connection
 from .query import Query
 
 
 class Database(object):
-    """A Database. Encapsulates a url and an SQLAlchemy engine with a pool of
-    connections.
+    """
+    Provides useful methods to send and retrieve data as DataFrame. Manages
+    opening and closing connections.
 
-    The url to the database can be provided directly or via a credentials-
-    dictionary `creds` with keys:
-        - host
-        - db
-        - user
-        - password
-        - dialect (defaults to mysql)
-        - driver (defaults to pymysql)
+    - db_url: (str|None|dict):
+        - str: a sqlalchemy url
+        - None: using a sqlalchemy url from the environment variable
+          'DATABASE_URL'
+        - dict: a dict with credentials and connect_args
+            - user
+            - password
+            - host      (defaults to 127.0.0.1)
+            - port      (defaults to 3306)
+            - db
+            - dialect   (defaults to mysql) -
+            - driver    (defaults to pymysql)
+            - ...: further fields are added to 'connect_args'
+    - sql_dir: (str|None) directory where to look for sql queries. Defaults to
+      '.'.
+    - escape_percentage: (bool) escape percentages when reading queries from a
+      file.
+    - remove_comments: (bool) remove comments when reading queries from a file.
+    - kwargs:
+        - creds: (dict) deprecated, provide a dict as db_url
+        - ...: all arguments are passed to sqlalchemy.create_engine
     """
 
-    def __init__(self, db_url=None, creds=None, sql_dir=None, connection_class=DefaultConnection,
-                 escape_percentage=False, remove_comments=False, **kwargs):
-        # If no db_url was provided, fallback to $DATABASE_URL or creds.
-        self.db_url = db_url or os.environ.get('DATABASE_URL')
-        self.sql_dir = sql_dir or os.getcwd()
-        if not self.db_url:
-            try:
-                user = creds['user']
-                password = creds['password']
-                host = creds['host']
-                db = creds['db']
-                dialect = creds.get('dialect', 'mysql')
-                driver = creds.get('driver', 'pymysql')
-                self.db_url = '{}+{}://{}:{}@{}/{}'.format(
-                    dialect, driver, user, password, host, db)
-            except:
-                raise ValueError('You must provide a db_url or proper creds.')
+    _connection_class = Connection
 
+    def __init__(self, db_url=None, sql_dir=None,
+                 escape_percentage=False, remove_comments=False, **kwargs):
+
+        self.sql_dir = sql_dir or os.getcwd()
         self._escape_percentage = escape_percentage
         self._remove_comments = remove_comments
-        self._engine = create_engine(self.db_url, **kwargs)
+        kwargs = self._init_db_url(db_url, **kwargs)
+        self._init_engine(**kwargs)
         self._open = True
-        self.connection_class = connection_class
+
+    def _init_db_url(self, db_url, **kwargs):
+        if db_url is None:
+            db_url = os.environ.get('DATABASE_URL')
+            if db_url is None:
+                db_url = kwargs.pop('creds', None)
+                if db_url is not None:
+                    warnings.warn(
+                        "Parameter 'creds' is depreacated in favor of db_url.",
+                        DeprecationWarning)
+                else:
+                    raise ValueError('db_url is missing')
+        if isinstance(db_url, str):
+            self.db_url = db_url
+        elif isinstance(db_url, dict):
+            db_url = db_url.copy()
+            self.db_url = '{}+{}://{}:{}@{}:{}/{}'.format(
+                db_url.pop('dialect', 'mysql'),
+                db_url.pop('driver', 'pymysql'),
+                db_url.pop('user'),
+                db_url.pop('password'),
+                db_url.pop('host', '127.0.0.1'),
+                db_url.pop('port', 3306),
+                db_url.pop('db'))
+            connect_args = kwargs.pop('connect_args', {})
+            connect_args.update(db_url)
+            if len(connect_args):
+                kwargs['connect_args'] = connect_args
+        else:
+            raise ValueError('db_url has to be a str or dict')
+        return kwargs
+
+    def _init_engine(self, **kwargs):
+        # We have this method, so that subclasses may override the init
+        # process.
+        self._engine = create_engine(self.db_url, **kwargs)
 
     def close(self):
         """Close the connection."""
@@ -62,18 +101,13 @@ class Database(object):
 
     def get_table_names(self):
         """Returns a list of table names for the connected database."""
-
-        # Setup SQLAlchemy for Database inspection.
         return inspect(self._engine).get_table_names()
 
     def get_connection(self):
-        """Get a connection to this Database. Connections are retrieved from a
-        pool.
-        """
+        """Get a connection from the sqlalchemy engine."""
         if not self._open:
             raise exc.ResourceClosedError('Database closed.')
-
-        return self.connection_class(self._engine.connect())
+        return self._connection_class(self._engine.connect())
 
     def __get_query_text(self, query, escape_percentage, remove_comments, **params):
         """Private wrapper for accessing the text of the query."""
@@ -114,7 +148,7 @@ class Database(object):
             query, escape_percentage, remove_comments, **params)
         return self.bulk_query(text, **params)
 
-    def send_data(self, df, table, mode='insert', **params):
+    def send_data(self, df: DataFrame, table, mode='insert', **params):
         """Sends data to table in database. If the table already exists, different modes of
         insertion are provided.
 
@@ -127,8 +161,6 @@ class Database(object):
                 - 'replace': replaces duplicate primary keys
                 - 'update': updates duplicate primary keys
         """
-        if not isinstance(df, DataFrame):
-            raise TypeError('df has to be a pandas DataFrame.')
         with self.transaction() as conn:
             return conn.send_data(df, table, mode, **params)
 
