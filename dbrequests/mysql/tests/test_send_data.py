@@ -27,7 +27,7 @@ class TestSendDataDiffs:
         db.send_data(df, 'diffs', mode='insert_diffs')
 
         # - expect a new row in the table
-        # - if the complete set would be transmitted, we would have one
+        # - if the complete set was transmitted, we would have one
         #   timestamp; when only the diffs are transmitted, we expect 2
         df = df.append(pd.DataFrame({'id': [4, 5], 'value': 'd'}))
         time.sleep(1)
