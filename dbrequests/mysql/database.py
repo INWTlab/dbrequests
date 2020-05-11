@@ -59,7 +59,7 @@ class Database(SuperDatabase):
             - 'update': insert but with update on duplicate primary keys
             - 'mode_diffs': insert|update|replace_diffs. Instead of sending
               the complete dataset, first identify the changes and then only
-              send the changes. This works most effectively, if you only
+              send the changes. This works most effectively if you only
               expect few changes in your data.
               - keys (str|list[str]|None): defaults to None. Columns to
                 identify unique values and find differences. None is the
