@@ -57,6 +57,18 @@ class Database(SuperDatabase):
             - 'replace': replaces (delete, then insert) duplicate primary
             keys.
             - 'update': insert but with update on duplicate primary keys
+            - 'mode_diffs': insert|update|replace_diffs. Instead of sending
+              the complete dataset, first identify the changes and then only
+              send the changes. This works most effectively if you only
+              expect few changes in your data.
+              - keys (str|list[str]|None): defaults to None. Columns to
+                identify unique values and find differences. None is the
+                default and uses all columns.
+              - in_range (str|None): optionally provide a name of a
+                numeric column, e.g. an id. We derive min and max and reduce
+                the amount of data we have to pull down to construct diffs.
+              - chunksize (int): defaults to 10 million. We pull data in chunks
+                and remove duplicates from the dataset.
         """
         if not isinstance(df, Frame):
             df = Frame(df)

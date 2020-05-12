@@ -58,3 +58,7 @@
       elements in connect_args for sqlalchemies create_engine: see #12
   - dbrequests.mysql
     - see #36 for bugfix while sending an empty frame
+
+## Version 1.3.16
+  - dbrequests.mysql
+    - see #35: New send_data modes: update_diffs, insert_diffs, replace_diffs
