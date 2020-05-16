@@ -13,6 +13,44 @@ from dbrequests import Connection as SuperConnection
 class Connection(SuperConnection):
     """A Database connection."""
 
+    def send_delete(self, df: Frame, table: str, mode: str, **params) -> int:
+        """See mysql.Database.send_delete for documentation."""
+        mode_implementation = '_send_delete_{}'.format(mode)
+        if hasattr(self, mode_implementation):
+            affected_rows = getattr(
+                self, mode_implementation)(df, table, **params)
+        else:
+            raise ValueError('{} is not a known mode'.format(mode))
+        return affected_rows
+
+    def _send_delete_in_set(self, df, table, **params):
+        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            return self._delete_set(table, tmp_table, df.names)
+
+    def _send_delete_not_in_set(self, df, table, **params):
+        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            return self._delete_set(table, tmp_table, df.names, False)
+
+    def _delete_set(self, table, tmp_table, df_names, not_null=True):
+        if not_null:
+            not_null = 'not'
+        else:
+            not_null = ''
+        delete_query = '''
+            delete `{table}` from
+                `{table}` left join `{tmp_table}` as tt using({tmp_cols})
+            where `tt`.{tmp_first_col} is {not_null} NULL;
+            ''' .format(
+            table=table,
+            tmp_table=tmp_table,
+            tmp_cols=self._sql_cols(df_names),
+            tmp_first_col=self._sql_cols([df_names[0]]),
+            not_null=not_null
+        )
+        return self.bulk_query(delete_query)
+
     def _send_data_insert(self, df, table):
         with TmpFile(mode='w', newline='') as tf:
             self._write_csv(df, tf)
@@ -34,11 +72,7 @@ class Connection(SuperConnection):
     def _send_data_update(self, df, table, mode='replace', **params):
         # We override the method from the super-class and need to honor the
         # interface. However, mode and **params are not needed here.
-        #
-        # TODO: We may want to delete columns that are not in df. Currently
-        # this method will enforce that there are default values for fields not
-        # part of df. This is an unnecessary restriction.
-        with self._temporary_table(table) as tmp_table:
+        with self._temporary_table(table, with_cols=df.names) as tmp_table:
             self._send_data_insert(df, tmp_table)
             self._insert_update(df, table, tmp_table)
 
