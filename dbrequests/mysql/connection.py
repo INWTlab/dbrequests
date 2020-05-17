@@ -26,14 +26,40 @@ class Connection(SuperConnection):
     def _send_delete_in_set(self, df, table, **params):
         with self._temporary_table(table, with_cols=df.names) as tmp_table:
             self._send_data_insert(df, tmp_table)
-            return self._delete_set(table, tmp_table, df.names)
+            return self._delete_set(table, tmp_table, df.names, False)
 
     def _send_delete_not_in_set(self, df, table, **params):
         with self._temporary_table(table, with_cols=df.names) as tmp_table:
             self._send_data_insert(df, tmp_table)
-            return self._delete_set(table, tmp_table, df.names, False)
+            return self._delete_set(table, tmp_table, df.names, True)
 
-    def _delete_set(self, table, tmp_table, df_names, not_null=True):
+    def _delete_set(self, table, tmp_table, cols, not_in=True):
+        if not_in:
+            not_in = 'not'
+        else:
+            not_in = ''
+        where_stmt = ' and '.join([
+            '`{col}` {not_in} in (select distinct `{col}` from `{tmp_table}`)'.format(
+                col=col, not_in=not_in, tmp_table=tmp_table)
+            for col in cols])
+        delete_stmt = 'delete from `{table}` where {where_stmt};'.format(
+            table=table,
+            where_stmt=where_stmt
+        )
+        delete_stmt
+        return self.bulk_query(delete_stmt)
+
+    def _send_delete_in_join(self, df, table, **params):
+        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            return self._delete_join(table, tmp_table, df.names)
+
+    def _send_delete_not_in_join(self, df, table, **params):
+        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+            self._send_data_insert(df, tmp_table)
+            return self._delete_join(table, tmp_table, df.names, False)
+
+    def _delete_join(self, table, tmp_table, df_names, not_null=True):
         if not_null:
             not_null = 'not'
         else:

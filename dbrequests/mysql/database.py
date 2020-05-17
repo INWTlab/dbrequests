@@ -88,9 +88,15 @@ class Database(SuperDatabase):
           delete. See mode for details.
         - table (str): the table where rows are to be deleted
         - mode (str):
-          - 'in_set': delete entries with a match in df. If it is possible to
+          - 'in_join': delete entries with a match in df. If it is possible to
             do a left join with df we have a match.
-          - 'not_in_set': delete entries with **no** match in df.
+          - 'not_in_join': delete entries with **no** match in df.
+          - 'in_set': delete entries which are in the set defined by df. We do
+            a 'where in col from df' and concatenate columns with 'and'. This
+            can bring a considerable speedup, compared to the join strategy, if
+            you only delete values from one enum field.
+          - 'not_in_set': delete entries which are not in the set defined by
+            df.
         """
         if not isinstance(df, Frame):
             df = Frame(df)
