@@ -46,7 +46,6 @@ class Connection(SuperConnection):
             table=table,
             where_stmt=where_stmt
         )
-        delete_stmt
         return self.bulk_query(delete_stmt)
 
     def _send_delete_in_join(self, df, table, **params):

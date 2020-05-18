@@ -76,44 +76,38 @@ with mysql.Database(URL) as db:
 
 
 # With ~ 25% rows changed:
-# DF_NEW = DF.copy()
-# DF_NEW[f.id < NROW / 2, 4] = 1
+DF_NEW = DF.copy()
+DF_NEW[f.id < NROW / 2, 4] = 1
 
-# with mysql.Database(URL) as db:
-#     db.send_data(DF, 'some_table', mode='truncate')
-#     time.sleep(200)
-#     with Stopwatch('Send with update'):
-#         db.send_data(DF_NEW, 'some_table', 'update')
+with mysql.Database(URL) as db:
+    db.send_data(DF, 'some_table', mode='truncate')
+    time.sleep(200)
+    with Stopwatch('Send with update'):
+        db.send_data(DF_NEW, 'some_table', 'update')
 
-# with mysql.Database(URL) as db:
-#     db.send_data(DF, 'some_table', mode='truncate')
-#     time.sleep(200)
-#     with Stopwatch('Send update diffs: 25%'):
-#         db.send_data(DF_NEW, 'some_table', 'update_diffs')
+with mysql.Database(URL) as db:
+    db.send_data(DF, 'some_table', mode='truncate')
+    time.sleep(200)
+    with Stopwatch('Send update diffs: 25%'):
+        db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
-# # With ~5% changes
-# DF_NEW = DF.copy()
-# DF_NEW[f.id < NROW * 0.1, 4] = 1
-# with mysql.Database(URL) as db:
-#     db.send_data(DF, 'some_table', mode='truncate')
-#     time.sleep(200)
-#     with Stopwatch('Send only diffs: 5%'):
-#         db.send_data(DF_NEW, 'some_table', 'update_diffs')
+# With ~5% changes
+DF_NEW = DF.copy()
+DF_NEW[f.id < NROW * 0.1, 4] = 1
+with mysql.Database(URL) as db:
+    db.send_data(DF, 'some_table', mode='truncate')
+    time.sleep(200)
+    with Stopwatch('Send only diffs: 5%'):
+        db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
 # With ~2.5% changes
 DF_NEW = DF.copy()
 DF_NEW[f.id < NROW * 0.05, 4] = 1
 with mysql.Database(URL) as db:
     db.send_data(DF, 'some_table', mode='truncate')
-    # time.sleep(200)
-    # with Stopwatch('Send only diffs: 2.5%'):
-    #     db.send_data(DF_NEW, 'some_table', 'update_diffs')
-
-with mysql.Database(URL) as db:
-    with Stopwatch('Delete rows not in DF_NEW'):
-        db.send_delete(
-            Frame(id=range(10000000), num2=[1 for _ in range(10000000)]),
-            'some_table', 'in_join')
+    time.sleep(200)
+    with Stopwatch('Send only diffs: 2.5%'):
+        db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
 
 CONTAINER.kill()
