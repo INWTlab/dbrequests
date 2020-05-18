@@ -115,7 +115,8 @@ class Connection(object):
             table=table
         ))
         if with_cols is not None:
-            # we can drop columns not being used
+            # with_cols defines the set of column we want to keep in the temp
+            # table. All other columns can be dropped.
             res = self.query('show columns from {table};'.format(table=table))
             cols_to_drop = [
                 k for k in res.Field.to_list() if k not in with_cols]
