@@ -115,7 +115,7 @@ class Connection(object):
             table=table
         ))
         if with_cols is not None:
-            # we can drop columns not being useed
+            # we can drop columns not being used
             res = self.query('show columns from {table};'.format(table=table))
             cols_to_drop = [
                 k for k in res.Field.to_list() if k not in with_cols]
