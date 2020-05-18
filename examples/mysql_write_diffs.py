@@ -109,7 +109,6 @@ with mysql.Database(URL) as db:
     with Stopwatch('Send only diffs: 2.5%'):
         db.send_data(DF_NEW, 'some_table', 'update_diffs')
 
-
 CONTAINER.kill()
 CONTAINER.remove()
 CLIENT.close()

@@ -72,8 +72,8 @@ def run_docker_container():
 
 def kill_remove_docker_container(container):
     """Kill and remove mariadb docker container."""
-    # container.kill()
-    # container.remove()
+    container.kill()
+    container.remove()
     return 0, 'Container {} removed.'.format(container.id[:12])
 
 
