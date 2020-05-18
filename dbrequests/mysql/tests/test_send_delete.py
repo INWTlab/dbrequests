@@ -59,7 +59,7 @@ class TestSendDeleteNotInSet:
 
 @pytest.mark.usefixtures('db')
 class TestSendDeleteInJoin:
-    """Tests for mode=in_set."""
+    """Tests for mode=in_join."""
 
     def test_delete_entries(self, db):
         """Delete some entries from a table."""
