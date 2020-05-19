@@ -62,3 +62,9 @@
 ## Version 1.3.16
   - dbrequests.mysql
     - see #35: New send_data modes: update_diffs, insert_diffs, replace_diffs
+
+## Version 1.3.17
+  - dbrequests.mysql
+    - new function in database: send_delete for deleting rows in a database.
+    - send_data in mode 'update' now allows to send only partial subset of
+      columns.

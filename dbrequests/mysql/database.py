@@ -78,6 +78,31 @@ class Database(SuperDatabase):
         with self.transaction() as conn:
             return conn.send_data(df, table, mode, **params)
 
+    def send_delete(self, df, table: str, mode: str = 'in_set', **params) -> int:
+        """
+        Delete entries in a table. Use this method instead of send_bulk_query
+        for deleting rows in a table; e.g. instead of looping over a long
+        vector and deleting chunkwise.
+
+        - df (DataFrame): a data frame containing the information which rows to
+          delete. See mode for details.
+        - table (str): the table where rows are to be deleted
+        - mode (str):
+          - 'in_join': delete entries with a match in df. If it is possible to
+            do a left join with df we have a match.
+          - 'not_in_join': delete entries with **no** match in df.
+          - 'in_set': delete entries which are in the set defined by df. We do
+            a 'where in col from df' and concatenate columns with 'and'. This
+            can bring a considerable speedup, compared to the join strategy, if
+            you only delete values from one enum field.
+          - 'not_in_set': delete entries which are not in the set defined by
+            df.
+        """
+        if not isinstance(df, Frame):
+            df = Frame(df)
+        with self.transaction() as conn:
+            return conn.send_delete(df, table, mode, **params)
+
     @staticmethod
     def _pick_cursorclass(url):
         """

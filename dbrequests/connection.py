@@ -41,7 +41,8 @@ class Connection(object):
         """Bulk insert or update."""
         params = {k: v for k, v in params.items(
         ) if k in inspect.getfullargspec(self._conn.execute).args}
-        self._conn.execute(text(query), **params)
+        res = self._conn.execute(text(query), **params)
+        return res.rowcount
 
     def send_data(self, df, table, mode='insert', **params):
         """
@@ -106,13 +107,27 @@ class Connection(object):
                   index=False, **params)
 
     @contextmanager
-    def _temporary_table(self, table):
-        tmp_table = 'tmp_dbrequests_' + table
+    def _temporary_table(self, table: str, with_cols: (str, None) = None):
+        tmp_table = 'tmp_dbrequests_{}'.format(table)
         self.bulk_query('''
         create temporary table `{tmp_table}` like `{table}`;'''.format(
             tmp_table=tmp_table,
             table=table
         ))
+        if with_cols is not None:
+            # with_cols defines the set of column we want to keep in the temp
+            # table. All other columns can be dropped.
+            res = self.query('show columns from {table};'.format(table=table))
+            cols_to_drop = [
+                k for k in res.Field.to_list() if k not in with_cols]
+            if len(cols_to_drop) > 0:
+                drop_query = 'alter table `{tmp_table}` {cols_to_drop};'.format(
+                    tmp_table=tmp_table,
+                    cols_to_drop=', '.join(
+                        ['drop column `' + col + '`' for col in cols_to_drop])
+                )
+                self.bulk_query(drop_query)
+            pass
         try:
             yield tmp_table
         except BaseException as e:
