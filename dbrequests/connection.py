@@ -108,7 +108,7 @@ class Connection(object):
 
     @contextmanager
     def _temporary_table(self, table: str, with_cols: (str, None) = None):
-        tmp_table = 'tmp_dbrequests_' + table
+        tmp_table = 'tmp_dbrequests_{}'.format(table)
         self.bulk_query('''
         create temporary table `{tmp_table}` like `{table}`;'''.format(
             tmp_table=tmp_table,
