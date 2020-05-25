@@ -13,6 +13,7 @@ __pycache__
 build
 dist
 *.pypirc
+Pipfile.lock
 
 # IDE files
 .idea
