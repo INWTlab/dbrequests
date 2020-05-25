@@ -68,3 +68,7 @@
     - new function in database: send_delete for deleting rows in a database.
     - send_data in mode 'update' now allows to send only partial subset of
       columns.
+
+## Version 1.4.0
+  - dbrequests.mysql
+    - bugfix in send_data with mode *_diffs: same as #36

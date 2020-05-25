@@ -54,6 +54,25 @@ class TestSendDataDiffs:
         assert res.updated.nunique() == 3
         assert res.value[1] == 'c'
 
+    def test_sending_empty_diffs(self, db):
+        """Empty diffs: same issue as in #36"""
+        reset_diffs(db)
+        df = pd.DataFrame({
+            'id': [1, 2, 3],
+            'value': ['a', 'b', 'c']
+        })
+
+        # We write initial data:
+        db.send_data(df, 'diffs', mode='insert_diffs')
+        # When the diffs are empty, the program freezes.
+        # Check for all diff-modes:
+        db.send_data(df, 'diffs', mode='insert_diffs')
+        db.send_data(df, 'diffs', mode='update_diffs')
+        db.send_data(df, 'diffs', mode='replace_diffs')
+
+        # The test is, that the program does not freeze:
+        assert True
+
 
 @pytest.mark.usefixtures('db')
 class TestSendDataInsert:
@@ -230,7 +249,10 @@ class TestSendDataBehaviours:
         #36.
         """
         res = db.send_query('select * from cats where id < 0')
-        assert db.send_data(res, 'cats') is None
+        db.send_data(res, 'cats')
+
+        # The program was freezing, so we are happy that the test 'runs'.
+        assert True
 
     def test_send_data_idempotence(self, db):
         """We check that reading and writing back in is idempotent.
