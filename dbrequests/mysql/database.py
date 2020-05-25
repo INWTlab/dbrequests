@@ -72,9 +72,6 @@ class Database(SuperDatabase):
         """
         if not isinstance(df, Frame):
             df = Frame(df)
-        # circumventing bug in datatable: see #36
-        if df.shape[0] == 0:
-            return None
         with self.transaction() as conn:
             return conn.send_data(df, table, mode, **params)
 

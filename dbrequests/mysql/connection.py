@@ -121,6 +121,10 @@ class Connection(SuperConnection):
         # - We have to replace None with NULL to tell MySQL, that we have
         #   actual NULL values. An empty cell is sometimes, but not always a
         #   NULL value. See #30
+        # - We have to check if the frame is empty. If so we have to
+        #   circumvent a  bug in datatable: see #36
+        if df.shape[0] == 0:
+            return None
         df = df[:, f[:].remove(f[:]).extend(str64(f[:]))][:, df.names]
         df.replace(None, 'NULL')
         df.to_csv(path=file.name, header=False)
