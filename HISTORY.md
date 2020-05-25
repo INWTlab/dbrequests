@@ -71,4 +71,4 @@
 
 ## Version 1.4.0
   - dbrequests.mysql
-    - bugfix in send_data with mode *_diffs: same as #36
+    - bugfix in send_data with mode [update|insert|replace]_diffs: same as #36
