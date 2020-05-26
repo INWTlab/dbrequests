@@ -73,6 +73,25 @@ class TestSendDataDiffs:
         # The test is, that the program does not freeze:
         assert True
 
+    def test_with_system_versioned_table(self, db):
+        """
+        We check that we can send data using the temporary tables context
+        manager, but without temporary tables. These are not implemented for
+        system versioned tables in mariadb.
+        """
+        reset(db)
+        res = db.send_query(
+            'select id, name, owner from cats', to_pandas=False)
+        with pytest.raises((OperationalError, InternalError)):
+            db.send_data(res, 'hist_cats', 'update_diffs')
+        db.send_data(res, 'hist_cats', 'update_diffs', with_temp=False)
+        with pytest.raises((OperationalError, InternalError)):
+            db.send_delete(res, 'hist_cats', 'in_join')
+        db.send_delete(res, 'hist_cats', 'in_join', with_temp=False)
+
+        # If it doesn't work, we get an error from the database.
+        assert True
+
 
 @pytest.mark.usefixtures('db')
 class TestSendDataInsert:

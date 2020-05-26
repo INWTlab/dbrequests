@@ -99,6 +99,9 @@ def set_up_cats(db):
           (2, 'Cookie', 'Casey', '2013-11-13' ),
           (3, 'Charlie', 'River', '2016-05-21' );
         """)
+    db.send_bulk_query('drop table if exists `hist_cats`;')
+    db.send_bulk_query('create table `hist_cats` like cats;')
+    db.send_bulk_query('alter table `hist_cats` add system versioning;')
 
 
 def set_up_diffs(db):

@@ -72,3 +72,8 @@
 ## Version 1.4.0
   - dbrequests.mysql
     - bugfix in send_data with mode [update|insert|replace]_diffs: same as #36
+
+## Version 1.4.1
+  - dbrequests.mysql
+    - bugfix for upstream bug in mariadb: sending diffs needs persisten tables
+      instead of temporary.
