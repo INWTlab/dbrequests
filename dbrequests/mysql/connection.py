@@ -24,12 +24,14 @@ class Connection(SuperConnection):
         return affected_rows
 
     def _send_delete_in_set(self, df, table, **params):
-        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+        with self._temporary_table(
+                table, df.names, params.pop('with_temp', True)) as tmp_table:
             self._send_data_insert(df, tmp_table)
             return self._delete_set(table, tmp_table, df.names, False)
 
     def _send_delete_not_in_set(self, df, table, **params):
-        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+        with self._temporary_table(
+                table, df.names, params.pop('with_temp', True)) as tmp_table:
             self._send_data_insert(df, tmp_table)
             return self._delete_set(table, tmp_table, df.names, True)
 
@@ -49,12 +51,14 @@ class Connection(SuperConnection):
         return self.bulk_query(delete_stmt)
 
     def _send_delete_in_join(self, df, table, **params):
-        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+        with self._temporary_table(
+                table, df.names, params.pop('with_temp', True)) as tmp_table:
             self._send_data_insert(df, tmp_table)
             return self._delete_join(table, tmp_table, df.names)
 
     def _send_delete_not_in_join(self, df, table, **params):
-        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+        with self._temporary_table(
+                table, df.names, params.pop('with_temp', True)) as tmp_table:
             self._send_data_insert(df, tmp_table)
             return self._delete_join(table, tmp_table, df.names, False)
 
@@ -95,15 +99,14 @@ class Connection(SuperConnection):
         self._send_data_insert(df, table)
 
     def _send_data_update(self, df, table, mode='replace', **params):
-        # We override the method from the super-class and need to honor the
-        # interface. However, mode and **params are not needed here.
-        with self._temporary_table(table, with_cols=df.names) as tmp_table:
+        with_temp = params.pop('with_temp', True)
+        with self._temporary_table(table, df.names, with_temp) as tmp_table:
             self._send_data_insert(df, tmp_table)
             self._insert_update(df, table, tmp_table)
 
     def _send_data_update_diffs(self, df, table, **params):
         diffs = self._make_diffs(df, table, **params)
-        self._send_data_update(diffs, table)
+        self._send_data_update(diffs, table, **params)
 
     def _send_data_insert_diffs(self, df, table, **params):
         diffs = self._make_diffs(df, table, **params)
@@ -195,7 +198,7 @@ class Connection(SuperConnection):
         return frame
 
     def _make_diffs(self, df, table, keys=None, in_range=None,
-                    chunksize=10000000):
+                    chunksize=10000000, **params):
         # Here is the strategy to construct diffs:
         # - pull down the complete target table
         # - to spare memory we do this chunkwise

@@ -107,13 +107,26 @@ class Connection(object):
                   index=False, **params)
 
     @contextmanager
-    def _temporary_table(self, table: str, with_cols: (str, None) = None):
+    def _temporary_table(self, table: str, with_cols: (str, None) = None, with_temp=True):
         tmp_table = 'tmp_dbrequests_{}'.format(table)
+        if with_temp:
+            temp_stmt = 'temporary'
+        else:
+            temp_stmt = ''
         self.bulk_query('''
-        create temporary table `{tmp_table}` like `{table}`;'''.format(
+        create {temp} table `{tmp_table}` like `{table}`;''' .format(
+            temp=temp_stmt,
             tmp_table=tmp_table,
             table=table
         ))
+        is_system_versioned = self.query(
+            '''select `table_type`
+            from `information_schema`.`tables`
+            where `table_name` = "{}";''' .format(tmp_table))
+        if is_system_versioned.shape[0] > 0:
+            if is_system_versioned.table_type[0] == 'SYSTEM VERSIONED':
+                self.bulk_query(
+                    'alter table `{}` drop system versioning'.format(tmp_table))
         if with_cols is not None:
             # with_cols defines the set of column we want to keep in the temp
             # table. All other columns can be dropped.
@@ -132,11 +145,11 @@ class Connection(object):
             yield tmp_table
         except BaseException as e:
             self.bulk_query(
-                'drop temporary table if exists {};'.format(tmp_table))
+                'drop {} table {};'.format(temp_stmt, tmp_table))
             raise e
         finally:
             self.bulk_query(
-                'drop temporary table if exists {};'.format(tmp_table))
+                'drop {} table {};'.format(temp_stmt, tmp_table))
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``
