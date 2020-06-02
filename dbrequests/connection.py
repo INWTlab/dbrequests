@@ -107,7 +107,7 @@ class Connection(object):
                   index=False, **params)
 
     @contextmanager
-    def _temporary_table(self, table: str, with_cols: (str, None) = None, with_temp=True):
+    def _temporary_table(self, table: str, with_cols: (str, None) = None, with_temp: bool = True):
         tmp_table = 'tmp_dbrequests_{}'.format(table)
         if with_temp:
             temp_stmt = 'temporary'
