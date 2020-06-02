@@ -62,6 +62,11 @@ class Connection(SuperConnection):
             self._send_data_insert(df, tmp_table)
             return self._delete_join(table, tmp_table, df.names, False)
 
+    def _send_delete_in_delete_col(self, df, table, **params):
+        df = df[:, f[:].extend({'delete': 1})]
+        self._send_data_update(df, table, **params)
+        self.bulk_query('delete from `{}` where `delete` = 1;'.format(table))
+
     def _delete_join(self, table, tmp_table, df_names, not_null=True):
         if not_null:
             not_null = 'not'
@@ -105,16 +110,22 @@ class Connection(SuperConnection):
             self._insert_update(df, table, tmp_table)
 
     def _send_data_update_diffs(self, df, table, **params):
-        diffs = self._make_diffs(df, table, **params)
+        diffs, dump = self._make_diffs(df, table, **params)
         self._send_data_update(diffs, table, **params)
 
     def _send_data_insert_diffs(self, df, table, **params):
-        diffs = self._make_diffs(df, table, **params)
+        diffs, dump = self._make_diffs(df, table, **params)
         self._send_data_insert(diffs, table)
 
     def _send_data_replace_diffs(self, df, table, **params):
-        diffs = self._make_diffs(df, table, **params)
+        diffs, dump = self._make_diffs(df, table, **params)
         self._send_data_replace(diffs, table)
+
+    def _send_data_sync_diffs(self, df, table, **params):
+        diffs, deletes = self._make_diffs(
+            df, table, both_directions=True, **params)
+        self._send_delete_in_delete_col(deletes, table, **params)
+        self._send_data_insert(diffs, table)
 
     def _write_csv(self, df, file):
         # Before writing, we need to convert all columns to strings for two
@@ -198,13 +209,13 @@ class Connection(SuperConnection):
         return frame
 
     def _make_diffs(self, df, table, keys=None, in_range=None,
-                    chunksize=10000000, **params):
+                    chunksize=10000000, both_directions=False, **params):
         # Here is the strategy to construct diffs:
         # - pull down the complete target table
         # - to spare memory we do this chunkwise
         # - for each chunk, do a left join on the column set 'keys'
         # - drop the matched lines
-        # - repeat
+        # - repeat for remote data if both_directions is True
         # Dealing with input params:
         if keys is None:
             keys = df.names
@@ -218,24 +229,41 @@ class Connection(SuperConnection):
             where = ''
         # Executing the strategy:
         df.key = keys
+        res = []
         with self._cursor() as cursor:
-            cursor.execute('select distinct {cols} from {table} {where};'.format(
+            cursor.execute('select {cols} from {table} {where};'.format(
                 cols=self._sql_cols(keys), table=table, where=where))
             while True:
                 result = cursor.fetchmany(chunksize)
-                if not result:
+                if len(result) == 0:
                     break
                 # prepare the data
                 result = Frame(result)
                 result.names = keys
                 result = result[:, f[:].extend({'__a__': 1})]
                 result.key = keys
-                # do the join
-                df = df[:, :, join(result)]
-                # remove the duplicates
-                del df[f.__a__ == 1, :]
-                del df[:, '__a__']
-        return df
+                # remove the duplicates from df
+                diffa = df[:, :, join(result)]
+                del diffa[f.__a__ == 1, :]
+                del diffa[:, '__a__']
+                if both_directions:
+                    del result[:, '__a__']
+                    # remove the duplicates from result
+                    df = df[:, f[:].extend({'__b__': 1})]
+                    df.key = keys
+                    diffb = result[:, :, join(df)]
+                    del diffb[f.__b__ == 1, :]
+                    diffb = diffb[:, result.names]
+                    # store for next iteration
+                    res.append(diffb)
+                df = diffa  # this HAS to happen, but after diffb
+        if both_directions:
+            res = rbind(res, bynames=False)
+            if res.shape == (0, 0):
+                res = Frame({n: [] for n in keys})
+        else:
+            res = None
+        return df, res
 
     @contextmanager
     def _cursor(self):

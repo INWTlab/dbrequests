@@ -77,3 +77,12 @@
   - dbrequests.mysql
     - bugfix for upstream bug in mariadb: sending diffs needs persisten tables
       instead of temporary.
+
+## Version 1.4.2
+  - dbrequests.mysql
+    - creating temorary removing partitions and system versioned from temporary
+      tables.
+    - new mode for send data: sync_diffs: update differences and delete
+      deprecated rows.
+    - new mode for delete data: in_delete_col: mark rows to delete, then delete.
+    - bugfix for temporary tables: now properly removes tables.

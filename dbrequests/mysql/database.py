@@ -57,10 +57,12 @@ class Database(SuperDatabase):
             - 'replace': replaces (delete, then insert) duplicate primary
             keys.
             - 'update': insert but with update on duplicate primary keys
-            - 'mode_diffs': insert|update|replace_diffs. Instead of sending
-              the complete dataset, first identify the changes and then only
-              send the changes. This works most effectively if you only
-              expect few changes in your data.
+            - 'mode_diffs': sync|insert|update|replace_diffs. Instead of
+              sending the complete dataset, first identify the changes and then
+              only send the changes. This works most effectively if you only
+              expect few changes in your data. 'sync' will not only update new
+              rows, but will also delete rows; this has the same effect as a
+              truncate.
               - keys (str|list[str]|None): defaults to None. Columns to
                 identify unique values and find differences. None is the
                 default and uses all columns.
@@ -94,6 +96,9 @@ class Database(SuperDatabase):
             you only delete values from one enum field.
           - 'not_in_set': delete entries which are not in the set defined by
             df.
+          - 'in_delete_col': updates the 'delete column in the target table
+            and then sends a delete statement. This can have more pretictable
+            performance compared to 'in_join'.
         """
         if not isinstance(df, Frame):
             df = Frame(df)
