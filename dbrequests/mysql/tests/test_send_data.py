@@ -13,7 +13,27 @@ from sqlalchemy.exc import OperationalError, InternalError
 
 @pytest.mark.usefixtures('db')
 class TestSendDataDiffs:
-    """Tests for mode=[update|replace|insert]_diffs."""
+    """Tests for mode=[sync|update|replace|insert]_diffs."""
+
+    def test_sync_diffs(self, db):
+        """
+        Synchronize has the same affect as a truncate. We only update what has
+        changed locally, aka the diffs, and delete what we find in the remote
+        table, but is missing locally.
+        """
+        reset_diffs(db)
+        df = pd.DataFrame({
+            'id': [1, 2, 3],
+            'value': ['a', 'b', 'c']
+        })
+        db.send_data(df, 'diffs', mode='insert')
+        new = pd.DataFrame({
+            'id': [1, 3, 4],
+            'value': ['c', 'c', 'b']
+        })
+        db.send_data(new, 'diffs', mode='sync_diffs')
+        res = db.send_query('select id, value from diffs;')
+        assert (new == res).all(axis=None)
 
     def test_sending_only_diffs(self, db):
         """Construct diffs."""
@@ -88,6 +108,20 @@ class TestSendDataDiffs:
         with pytest.raises((OperationalError, InternalError)):
             db.send_delete(res, 'hist_cats', 'in_join')
         db.send_delete(res, 'hist_cats', 'in_join', with_temp=False)
+
+        # If it doesn't work, we get an error from the database.
+        assert True
+
+    def test_with_system_versioned_table_sync(self, db):
+        """
+        We check that we can send data using the temporary tables context
+        manager, but without temporary tables. These are not implemented for
+        system versioned tables in mariadb.
+        """
+        reset(db)
+        res = db.send_query(
+            'select id, name, owner from cats', to_pandas=False)
+        db.send_data(res, 'hist_cats', 'sync_diffs', with_temp=False)
 
         # If it doesn't work, we get an error from the database.
         assert True

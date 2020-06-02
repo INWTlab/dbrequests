@@ -101,7 +101,13 @@ def set_up_cats(db):
         """)
     db.send_bulk_query('drop table if exists `hist_cats`;')
     db.send_bulk_query('create table `hist_cats` like cats;')
+    db.send_bulk_query(
+        """alter table hist_cats add `delete` int(1) default NULL 
+        invisible null;""")
     db.send_bulk_query('alter table `hist_cats` add system versioning;')
+    db.send_bulk_query(
+        """alter table hist_cats partition by SYSTEM_TIME(partition p_hist 
+        history, partition p_cur current)""")
 
 
 def set_up_diffs(db):
@@ -110,7 +116,9 @@ def set_up_diffs(db):
         `id` bigint(20) NOT NULL AUTO_INCREMENT,
         `value` varchar(100) NOT NULL,
         `updated` timestamp NOT NULL DEFAULT current_timestamp(),
-        PRIMARY KEY (`id`)
+        `delete` int(1) INVISIBLE DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `diffs_delete_IDX` (`delete`) USING BTREE
     ) ENGINE=InnoDB AUTO_INCREMENT=2
     """)
     db.bulk_query('TRUNCATE TABLE diffs')

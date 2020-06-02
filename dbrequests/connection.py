@@ -113,43 +113,51 @@ class Connection(object):
             temp_stmt = 'temporary'
         else:
             temp_stmt = ''
-        self.bulk_query('''
-        create {temp} table `{tmp_table}` like `{table}`;''' .format(
-            temp=temp_stmt,
-            tmp_table=tmp_table,
-            table=table
-        ))
-        is_system_versioned = self.query(
-            '''select `table_type`
-            from `information_schema`.`tables`
-            where `table_name` = "{}";''' .format(tmp_table))
-        if is_system_versioned.shape[0] > 0:
-            if is_system_versioned.table_type[0] == 'SYSTEM VERSIONED':
-                self.bulk_query(
-                    'alter table `{}` drop system versioning'.format(tmp_table))
-        if with_cols is not None:
-            # with_cols defines the set of column we want to keep in the temp
-            # table. All other columns can be dropped.
-            res = self.query('show columns from {table};'.format(table=table))
-            cols_to_drop = [
-                k for k in res.Field.to_list() if k not in with_cols]
-            if len(cols_to_drop) > 0:
-                drop_query = 'alter table `{tmp_table}` {cols_to_drop};'.format(
-                    tmp_table=tmp_table,
-                    cols_to_drop=', '.join(
-                        ['drop column `' + col + '`' for col in cols_to_drop])
-                )
-                self.bulk_query(drop_query)
-            pass
         try:
+            self.bulk_query('''
+                create {temp} table `{tmp_table}` like `{table}`;''' .format(
+                temp=temp_stmt,
+                tmp_table=tmp_table,
+                table=table
+            ))
+            is_partitioned = self.query(
+                '''
+                select `create_options` from `information_schema`.`tables`
+                where `table_name` = "{}";'''.format(tmp_table)
+            )
+            if is_partitioned.shape[0] > 0:
+                if is_partitioned.create_options[0] == 'partitioned':
+                    self.bulk_query(
+                        'alter table `{}` remove partitioning;'.format(tmp_table))
+            is_system_versioned = self.query(
+                '''select `table_type`
+                from `information_schema`.`tables`
+                where `table_name` = "{}";'''.format(tmp_table))
+            if is_system_versioned.shape[0] > 0:
+                if is_system_versioned.table_type[0] == 'SYSTEM VERSIONED':
+                    self.bulk_query(
+                        'alter table `{}` drop system versioning'.format(tmp_table))
+            if with_cols is not None:
+                # with_cols defines the set of column we want to keep in the temp
+                # table. All other columns can be dropped.
+                res = self.query(
+                    'show columns from {table};'.format(table=table))
+                cols_to_drop = [
+                    k for k in res.Field.to_list() if k not in with_cols]
+                if len(cols_to_drop) > 0:
+                    drop_query = 'alter table `{tmp_table}` {cols_to_drop};'.format(
+                        tmp_table=tmp_table,
+                        cols_to_drop=', '.join(
+                            ['drop column `' + col + '`' for col in cols_to_drop])
+                    )
+                    self.bulk_query(drop_query)
+                pass
             yield tmp_table
         except BaseException as e:
-            self.bulk_query(
-                'drop {} table {};'.format(temp_stmt, tmp_table))
             raise e
         finally:
             self.bulk_query(
-                'drop {} table {};'.format(temp_stmt, tmp_table))
+                'drop {} table if exists {};'.format(temp_stmt, tmp_table))
 
     def transaction(self):
         """Returns a transaction object. Call ``commit`` or ``rollback``
