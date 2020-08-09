@@ -209,11 +209,10 @@ class Connection(SuperConnection):
         return frame
 
     def _make_diffs(self, df, table, keys=None, in_range=None,
-                    chunksize=10000000, both_directions=False, **params):
+                    both_directions=False, **params):
         # Here is the strategy to construct diffs:
         # - pull down the complete target table
-        # - to spare memory we do this chunkwise
-        # - for each chunk, do a left join on the column set 'keys'
+        # - do a left join on the column set 'keys'
         # - drop the matched lines
         # - repeat for remote data if both_directions is True
         # Dealing with input params:
@@ -228,42 +227,35 @@ class Connection(SuperConnection):
         else:
             where = ''
         # Executing the strategy:
-        df.key = keys
-        res = []
-        with self._cursor() as cursor:
-            cursor.execute('select {cols} from {table} {where};'.format(
-                cols=self._sql_cols(keys), table=table, where=where))
-            while True:
-                result = cursor.fetchmany(chunksize)
-                if len(result) == 0:
-                    break
-                # prepare the data
-                result = Frame(result)
-                result.names = keys
-                result = result[:, f[:].extend({'__a__': 1})]
-                result.key = keys
-                # remove the duplicates from df
-                diffa = df[:, :, join(result)]
-                del diffa[f.__a__ == 1, :]
-                del diffa[:, '__a__']
-                if both_directions:
-                    del result[:, '__a__']
-                    # remove the duplicates from result
-                    df = df[:, f[:].extend({'__b__': 1})]
-                    df.key = keys
-                    diffb = result[:, :, join(df)]
-                    del diffb[f.__b__ == 1, :]
-                    diffb = diffb[:, result.names]
-                    # store for next iteration
-                    res.append(diffb)
-                df = diffa  # this HAS to happen, but after diffb
-        if both_directions:
-            res = rbind(res, bynames=False)
-            if res.shape == (0, 0):
-                res = Frame({n: [] for n in keys})
+        query = 'select {cols} from {table} {where};'.format(
+            cols=self._sql_cols(keys), table=table, where=where)
+        result = self.query(query, to_pandas=False, **params)
+        if result.shape[0] > 0:
+            # prepare the data
+            df.key = keys
+            result = result[:, f[:].extend({'__a__': 1})]
+            result.key = keys
+            # remove the duplicates from df
+            diffa = df[:, :, join(result)]
+            del diffa[f.__a__ == 1, :]
+            del diffa[:, '__a__']
+            del result[:, '__a__']
         else:
-            res = None
-        return df, res
+            # return df if result is empty
+            diffa = df
+        if both_directions:
+            # same as before, but the other way around
+            # remove the duplicates from result
+            df = df[:, f[:].extend({'__b__': 1})]
+            df.key = keys
+            diffb = result[:, :, join(df)]
+            del diffb[f.__b__ == 1, :]
+            diffb = diffb[:, result.names]
+            if diffb.shape == (0, 0):
+                diffb = Frame({n: [] for n in keys})
+        else:
+            diffb = None
+        return diffa, diffb
 
     @contextmanager
     def _cursor(self):
