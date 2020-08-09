@@ -1,9 +1,6 @@
 name: Run pytest
 
-on:
-  push:
-    branches:
-      - more_stable_sync_diffs
+on: [push]
 
 jobs:
   build:
