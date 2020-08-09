@@ -3,7 +3,7 @@ name: wemake style
 on:
   pull_request:
     branches:
-      - master
+      - lala-master
 
 jobs:
   build:
