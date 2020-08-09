@@ -3,11 +3,11 @@ name: Run pytest
 on:
   push:
     branches:
-      - master
-  pull_request
+      - more_stable_sync_diffs
 
 jobs:
   build:
+    
     name: ${{matrix.os}} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
