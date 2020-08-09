@@ -2,7 +2,7 @@ name: wemake-python-styleguide
 on:
   push:
     branches:
-      - feature/#15-load-data-infile
+      - more_stable_sync_diffs
 jobs:
   wemake:
     runs-on: ubuntu-18.04
