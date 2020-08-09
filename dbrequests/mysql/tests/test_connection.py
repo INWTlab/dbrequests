@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 from dbrequests.mysql.tests.conftest import set_up_cats as reset
-from sqlalchemy.exc import InternalError
+from sqlalchemy.exc import InternalError, OperationalError
 
 
 @pytest.mark.usefixtures('db_connect_args')
@@ -25,5 +25,5 @@ class TestConnectionWithConnectArgs:
         })
 
         reset(db_connect_args)
-        with pytest.raises(InternalError):
+        with pytest.raises((InternalError, OperationalError)):
             db_connect_args.send_data(df_add, 'cats', mode='insert')
