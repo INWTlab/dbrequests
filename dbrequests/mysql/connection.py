@@ -254,7 +254,7 @@ class Connection(SuperConnection):
                         print(f"Downloaded {lines_processed} lines from the database")
         if save_to_file:
             frame = None
-            return frame, filepath
+            return filepath  # frame,
 
         frame = rbind(res, bynames=False)
         if frame.shape == (0, 0):
@@ -263,7 +263,7 @@ class Connection(SuperConnection):
             frame.names = fields
         if to_pandas:
             frame = frame.to_pandas()
-        return frame, filepath
+        return frame  # , filepath
 
     def _make_diffs_filediffs(self, df, table, **params):
         keys = df.names
@@ -295,7 +295,7 @@ class Connection(SuperConnection):
         if verbose:
             print(f"Get the database table and save it to disk for use in filediffs\nUsing the query: '{query}'")
         # save db table to file
-        frame, db_df_path = self.query(query, to_pandas=False, save_to_file=True, **params)
+        db_df_path = self.query(query, to_pandas=False, save_to_file=True, **params)
 
         # split input df into lines only in input df and lines only in db and save to file
         if verbose:
