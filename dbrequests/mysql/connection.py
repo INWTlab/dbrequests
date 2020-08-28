@@ -2,11 +2,15 @@
 Implements the backend for MySQL databases. This is mysql and mariadb
 compliant.
 """
-
-from inspect import getfullargspec as getargs
+import os
 from contextlib import contextmanager
+from inspect import getfullargspec as getargs
+from pathlib import Path
 from tempfile import NamedTemporaryFile as TmpFile
+
 from datatable import dt, f, str64, Frame, rbind, join
+from filediffs.filediffs_python.filediffs import file_diffs
+
 from dbrequests import Connection as SuperConnection
 
 
@@ -64,7 +68,11 @@ class Connection(SuperConnection):
 
     def _send_delete_in_delete_col(self, df, table, **params):
         df = df[:, f[:].extend({'delete': 1})]
+        print(f"_send_delete_in_delete_col: '_send_data_update(df, {table}, **params)' with params {params}")
+        print("The sent df has shape: {}".format(df.shape))
         self._send_data_update(df, table, **params)
+        delete_query = 'delete from `{}` where `delete` = 1;'.format(table)
+        print(f"_send_delete_in_delete_col: bulk_query({delete_query})")
         self.bulk_query('delete from `{}` where `delete` = 1;'.format(table))
 
     def _delete_join(self, table, tmp_table, df_names, not_null=True):
@@ -76,7 +84,7 @@ class Connection(SuperConnection):
             delete `{table}` from
                 `{table}` left join `{tmp_table}` as tt using({tmp_cols})
             where `tt`.{tmp_first_col} is {not_null} NULL;
-            ''' .format(
+            '''.format(
             table=table,
             tmp_table=tmp_table,
             tmp_cols=self._sql_cols(df_names),
@@ -127,7 +135,15 @@ class Connection(SuperConnection):
         self._send_delete_in_delete_col(deletes, table, **params)
         self._send_data_insert(diffs, table)
 
-    def _write_csv(self, df, file):
+    def _send_data_sync_filediffs(self, df, table, **params):
+        print("Start function make_diffs_filediffs.")
+        diffs, deletes = self._make_diffs_filediffs(df, table, **params)
+        print("Execute '_send_delete_in_delete_col':")
+        self._send_delete_in_delete_col(deletes, table, **params)
+        print("Execute '_send_data_insert':")
+        self._send_data_insert(diffs, table)
+
+    def _write_csv(self, df, file, append=False):
         # Before writing, we need to convert all columns to strings for two
         # reasons:
         # - We have to convert any obj64 types to str64: Frame.to_csv can't
@@ -141,7 +157,7 @@ class Connection(SuperConnection):
             return None
         df = df[:, f[:].remove(f[:]).extend(str64(f[:]))][:, df.names]
         df.replace(None, 'NULL')
-        df.to_csv(path=file.name, header=False)
+        df.to_csv(path=file.name, header=False, append=append)
 
     def _infile_csv(self, file, df, table, replace=''):
         self.bulk_query("""
@@ -179,7 +195,7 @@ class Connection(SuperConnection):
     def _sql_update(df):
         stmt = ", ".join(
             ["`{name}`=values(`{name}`)".format(name=str(name))
-                for name in df.names])
+             for name in df.names])
         return stmt
 
     def query(self, query, **params):
@@ -188,17 +204,58 @@ class Connection(SuperConnection):
         """
         chunksize = params.pop('chunksize', 100000)
         to_pandas = params.pop('to_pandas', True)
+        save_to_file = params.pop('save_to_file', False)
+        verbose = params.pop('verbose', False)
+        if not save_to_file:
+            filepath = None
+        else:
+            filepath = "dbtable.csv"
+            if filepath in os.listdir():
+                if verbose:
+                    print(f"Remove file {filepath} to have a clean file to save the db table data.")
+                os.remove(filepath)
+
         with self._cursor() as cursor:
             params = {k: v for k, v in params.items()
                       if k in getargs(cursor.execute).args}
+            if verbose:
+                print("Run 'cursor.execute(query, **params)'")
             cursor.execute(query, **params)
             fields = [i[0] for i in cursor.description]
             res = []
+            if verbose:
+                print("Starting the chunkwise file reading process from the databse."
+                      " Use 'chunksize' argument to change the chunk size.")
+                print(f"Currently working with chunksize: {chunksize}")
+            chunk_count = 0
+            notify_n = 1000000
             while True:
                 result = cursor.fetchmany(chunksize)
                 if not result:
+                    if verbose:
+                        print(
+                            f"Finished getting data from the database chunkwise. Saved to Ram: {not save_to_file}. Saved to File: {save_to_file}")
                     break
-                res.append(Frame(result))
+                if save_to_file:
+                    # open file connection and append chunk to file
+                    results_frame = Frame(result)
+                    results_frame.names = fields
+                    with open(filepath, "a+") as fcon:
+                        self._write_csv(results_frame, fcon, append=True)
+
+                else:
+                    res.append(Frame(result))
+
+                # log processed chunk every notify_n rows processed
+                if verbose:
+                    chunk_count = chunk_count + 1
+                    lines_processed = chunk_count * chunksize
+                    if lines_processed % notify_n == 0:
+                        print(f"Downloaded {lines_processed} lines from the database")
+        if save_to_file:
+            frame = None
+            return frame, filepath
+
         frame = rbind(res, bynames=False)
         if frame.shape == (0, 0):
             frame = Frame({n: [] for n in fields})
@@ -206,7 +263,70 @@ class Connection(SuperConnection):
             frame.names = fields
         if to_pandas:
             frame = frame.to_pandas()
-        return frame
+        return frame, filepath
+
+    def _make_diffs_filediffs(self, df, table, **params):
+        keys = df.names
+        if "verbose" in params:
+            verbose = params["verbose"]
+        else:
+            verbose = False
+
+        # save df and free ram
+        if verbose:
+            print("Save df to file for use in filediffs")
+        input_df_path = "input_table.csv"
+        # use function write_csv für datatable
+        # todo: use TmpFile
+        # with TmpFile(mode='w', newline='') as tf:
+        with open(input_df_path, "wb+") as fcon:
+            self._write_csv(df, fcon)
+        if verbose:
+            print("delete the df from ram reference counter")
+        # check obs hilft. weil datatable wird es gelöscht? bei pandas?
+        df = 1
+        del df
+
+        # Executing the strategy:
+        query = 'select {cols} from {table};'.format(cols=self._sql_cols(keys), table=table)
+
+        # save directly to file and return filepath
+        # find conecept to deal with temporary file management. Maybe just manually delete it
+        if verbose:
+            print(f"Get the database table and save it to disk for use in filediffs\nUsing the query: '{query}'")
+        # save db table to file
+        frame, db_df_path = self.query(query, to_pandas=False, save_to_file=True, **params)
+
+        # split input df into lines only in input df and lines only in db and save to file
+        if verbose:
+            print("Create filediffs and save them to disk.")
+        file_diffs(input_df_path, db_df_path, verbose=verbose)
+        diffa_path = 'lines_present_only_in_file1.txt'
+        diffb_path = 'lines_present_only_in_file2.txt'
+
+        diffa = dt.fread(diffa_path)
+        diffb = dt.fread(diffb_path)
+        # renaming necessary because filediffs is stupid and dropping the header line because its present in both files
+        if diffa.shape == (0, 0):
+            diffa = dt.Frame([[] for col in keys])
+            diffa.names = keys
+        else:
+            diffa.names = keys
+
+        if diffb.shape == (0, 0):
+            diffb = dt.Frame([[] for col in keys])
+            diffb.names = keys
+        else:
+            diffb.names = keys
+
+        # cleanup files # todo: use context manager
+        if verbose:
+            print("Cleanup local temporary files")
+        tmp_files = [diffa_path, diffb_path, input_df_path, db_df_path, "lines_present_in_both_files.txt"]
+        for file in tmp_files:
+            Path(file).unlink(missing_ok=True)
+
+        return diffa, diffb
 
     def _make_diffs(self, df, table, keys=None, in_range=None,
                     chunksize=10000000, both_directions=False, **params):
