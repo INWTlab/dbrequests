@@ -64,7 +64,7 @@ class Connection(SuperConnection):
 
     def _send_delete_in_delete_col(self, df, table, **params):
         df = df[:, f[:].extend({'delete': 1})]
-        self._send_data_replace(df, table, **params)
+        self._send_data_replace(df, table)
         self.bulk_query('delete from `{}` where `delete` = 1;'.format(table))
 
     def _delete_join(self, table, tmp_table, df_names, not_null=True):
