@@ -6,6 +6,7 @@ compliant.
 from inspect import getfullargspec as getargs
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
+import logging
 from datatable import dt, f, str64, Frame, rbind, join
 from dbrequests import Connection as SuperConnection
 
@@ -63,9 +64,12 @@ class Connection(SuperConnection):
             return self._delete_join(table, tmp_table, df.names, False)
 
     def _send_delete_in_delete_col(self, df, table, **params):
-        df = df[:, f[:].extend({'delete': 1})]
-        self._send_data_replace(df, table)
-        self.bulk_query('delete from `{}` where `delete` = 1;'.format(table))
+        logging.info(f'delete {df.shape[0]} rows')
+        if df.shape[0] > 0:
+            df = df[:, f[:].extend({'delete': 1})]
+            self._send_data_replace(df, table)
+            self.bulk_query(
+                'delete from `{}` where `delete` = 1;'.format(table))
 
     def _delete_join(self, table, tmp_table, df_names, not_null=True):
         if not_null:
@@ -86,45 +90,54 @@ class Connection(SuperConnection):
         return self.bulk_query(delete_query)
 
     def _send_data_insert(self, df, table):
+        logging.info(f'sending data with insert: {df.shape[0]} rows')
         with TmpFile(mode='w', newline='') as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table)
 
     def _send_data_replace(self, df, table):
+        logging.info(f'sending data with replace: {df.shape[0]} rows')
         with TmpFile(mode='w', newline='') as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table, replace='replace')
 
     def _send_data_truncate(self, df, table):
+        logging.info(f'sending data with truncate: {df.shape[0]} rows')
         self.bulk_query("truncate table {table};".format(table=table))
         self._send_data_insert(df, table)
 
     def _send_data_delete(self, df, table):
+        logging.info(f'sending data with delete: {df.shape[0]} rows')
         self.bulk_query("delete from {table};".format(table=table))
         self._send_data_insert(df, table)
 
     def _send_data_update(self, df, table, mode='replace', **params):
+        logging.info(f'sending data with update: {df.shape[0]} rows')
         with_temp = params.pop('with_temp', True)
         with self._temporary_table(table, df.names, with_temp) as tmp_table:
             self._send_data_insert(df, tmp_table)
             self._insert_update(df, table, tmp_table)
 
     def _send_data_update_diffs(self, df, table, **params):
+        logging.info(f'sending data with update_diffs: {df.shape[0]} rows')
         remote_table = self._get_diff_table(df, table, **params)
         diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_update(diffs, table, **params)
 
     def _send_data_insert_diffs(self, df, table, **params):
+        logging.info(f'sending data with insert_diffs: {df.shape[0]} rows')
         remote_table = self._get_diff_table(df, table, **params)
         diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_insert(diffs, table)
 
     def _send_data_replace_diffs(self, df, table, **params):
+        logging.info(f'sending data with replace_diffs: {df.shape[0]} rows')
         remote_table = self._get_diff_table(df, table, **params)
         diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_replace(diffs, table)
 
     def _send_data_sync_diffs(self, df, table, **params):
+        logging.info(f'sending data with sync_diffs: {df.shape[0]} rows')
         remote_table = self._get_diff_table(df, table, **params)
         diffa = self._make_diffs(df, remote_table, **params)
         diffb = self._make_diffs(
