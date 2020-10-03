@@ -1,11 +1,15 @@
-name: wemake-python-styleguide
+name: wemake style
+
 on:
-  push:
+  pull_request:
     branches:
-      - feature/#15-load-data-infile
+      - lala-master
+
 jobs:
-  wemake:
-    runs-on: ubuntu-18.04
+  build:
+
+    runs-on: ubuntu-latest
+
     steps:
-      - name: wemake-service
-        uses: wemake-services/wemake-python-styleguide@0.13.4
+    - uses: actions/checkout@v1
+    - uses: wemake-services/wemake-python-styleguide@master

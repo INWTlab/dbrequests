@@ -6,6 +6,7 @@ compliant.
 from inspect import getfullargspec as getargs
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile as TmpFile
+import logging
 from datatable import dt, f, str64, Frame, rbind, join
 from dbrequests import Connection as SuperConnection
 
@@ -63,9 +64,12 @@ class Connection(SuperConnection):
             return self._delete_join(table, tmp_table, df.names, False)
 
     def _send_delete_in_delete_col(self, df, table, **params):
-        df = df[:, f[:].extend({'delete': 1})]
-        self._send_data_update(df, table, **params)
-        self.bulk_query('delete from `{}` where `delete` = 1;'.format(table))
+        logging.info(f'delete {df.shape[0]} rows')
+        if df.shape[0] > 0:
+            df = df[:, f[:].extend({'delete': 1})]
+            self._send_data_replace(df, table)
+            self.bulk_query(
+                'delete from `{}` where `delete` = 1;'.format(table))
 
     def _delete_join(self, table, tmp_table, df_names, not_null=True):
         if not_null:
@@ -86,46 +90,60 @@ class Connection(SuperConnection):
         return self.bulk_query(delete_query)
 
     def _send_data_insert(self, df, table):
+        logging.info(f'sending data with insert: {df.shape[0]} rows')
         with TmpFile(mode='w', newline='') as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table)
 
     def _send_data_replace(self, df, table):
+        logging.info(f'sending data with replace: {df.shape[0]} rows')
         with TmpFile(mode='w', newline='') as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table, replace='replace')
 
     def _send_data_truncate(self, df, table):
+        logging.info(f'sending data with truncate: {df.shape[0]} rows')
         self.bulk_query("truncate table {table};".format(table=table))
         self._send_data_insert(df, table)
 
     def _send_data_delete(self, df, table):
+        logging.info(f'sending data with delete: {df.shape[0]} rows')
         self.bulk_query("delete from {table};".format(table=table))
         self._send_data_insert(df, table)
 
     def _send_data_update(self, df, table, mode='replace', **params):
+        logging.info(f'sending data with update: {df.shape[0]} rows')
         with_temp = params.pop('with_temp', True)
         with self._temporary_table(table, df.names, with_temp) as tmp_table:
             self._send_data_insert(df, tmp_table)
             self._insert_update(df, table, tmp_table)
 
     def _send_data_update_diffs(self, df, table, **params):
-        diffs, dump = self._make_diffs(df, table, **params)
+        logging.info(f'sending data with update_diffs: {df.shape[0]} rows')
+        remote_table = self._get_diff_table(df, table, **params)
+        diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_update(diffs, table, **params)
 
     def _send_data_insert_diffs(self, df, table, **params):
-        diffs, dump = self._make_diffs(df, table, **params)
+        logging.info(f'sending data with insert_diffs: {df.shape[0]} rows')
+        remote_table = self._get_diff_table(df, table, **params)
+        diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_insert(diffs, table)
 
     def _send_data_replace_diffs(self, df, table, **params):
-        diffs, dump = self._make_diffs(df, table, **params)
+        logging.info(f'sending data with replace_diffs: {df.shape[0]} rows')
+        remote_table = self._get_diff_table(df, table, **params)
+        diffs = self._make_diffs(df, remote_table, **params)
         self._send_data_replace(diffs, table)
 
     def _send_data_sync_diffs(self, df, table, **params):
-        diffs, deletes = self._make_diffs(
-            df, table, both_directions=True, **params)
-        self._send_delete_in_delete_col(deletes, table, **params)
-        self._send_data_insert(diffs, table)
+        logging.info(f'sending data with sync_diffs: {df.shape[0]} rows')
+        remote_table = self._get_diff_table(df, table, **params)
+        diffa = self._make_diffs(df, remote_table, **params)
+        diffb = self._make_diffs(
+            remote_table, df, keys=self._get_primary_key(table), **params)
+        self._send_delete_in_delete_col(diffb, table, **params)
+        self._send_data_replace(diffa, table)
 
     def _write_csv(self, df, file):
         # Before writing, we need to convert all columns to strings for two
@@ -208,15 +226,7 @@ class Connection(SuperConnection):
             frame = frame.to_pandas()
         return frame
 
-    def _make_diffs(self, df, table, keys=None, in_range=None,
-                    chunksize=10000000, both_directions=False, **params):
-        # Here is the strategy to construct diffs:
-        # - pull down the complete target table
-        # - to spare memory we do this chunkwise
-        # - for each chunk, do a left join on the column set 'keys'
-        # - drop the matched lines
-        # - repeat for remote data if both_directions is True
-        # Dealing with input params:
+    def _get_diff_table(self, df, table, keys=None, in_range=None, **params):
         if keys is None:
             keys = df.names
         if in_range:
@@ -227,43 +237,41 @@ class Connection(SuperConnection):
             )
         else:
             where = ''
-        # Executing the strategy:
-        df.key = keys
-        res = []
-        with self._cursor() as cursor:
-            cursor.execute('select {cols} from {table} {where};'.format(
-                cols=self._sql_cols(keys), table=table, where=where))
-            while True:
-                result = cursor.fetchmany(chunksize)
-                if len(result) == 0:
-                    break
-                # prepare the data
-                result = Frame(result)
-                result.names = keys
-                result = result[:, f[:].extend({'__a__': 1})]
-                result.key = keys
-                # remove the duplicates from df
-                diffa = df[:, :, join(result)]
-                del diffa[f.__a__ == 1, :]
-                del diffa[:, '__a__']
-                if both_directions:
-                    del result[:, '__a__']
-                    # remove the duplicates from result
-                    df = df[:, f[:].extend({'__b__': 1})]
-                    df.key = keys
-                    diffb = result[:, :, join(df)]
-                    del diffb[f.__b__ == 1, :]
-                    diffb = diffb[:, result.names]
-                    # store for next iteration
-                    res.append(diffb)
-                df = diffa  # this HAS to happen, but after diffb
-        if both_directions:
-            res = rbind(res, bynames=False)
-            if res.shape == (0, 0):
-                res = Frame({n: [] for n in keys})
+        query = 'select {cols} from {table} {where};'.format(
+            cols=self._sql_cols(keys), table=table, where=where)
+        res = self.query(query, to_pandas=False, **params)
+        return res
+
+    def _get_primary_key(self, table):
+        query = f"""SHOW INDEXES FROM {table}
+        where key_name = 'PRIMARY'
+        and column_name != 'row_end'"""
+        res = self.query(query, to_pandas=False)
+        if res.shape[0] > 0:
+            pk = res[:, 'Column_name'].to_list()[0]
         else:
-            res = None
-        return df, res
+            pk = None
+        return pk
+
+    def _make_diffs(self, dfa, dfb, keys=None, **params):
+        if keys is None:
+            keys = dfa.names
+        if dfb.shape[0] > 0:
+            # prepare the data
+            dfa.key = keys
+            dfb = dfb[:, keys]  # we only need the keys to find diffs
+            dfb = dfb[:, f[:].extend({'__a__': 1})]
+            dfb.key = keys
+            # remove the duplicates from dfa
+            diffs = dfa[:, :, join(dfb)]
+            del diffs[f.__a__ == 1, :]
+            del diffs[:, '__a__']
+            del dfb[:, '__a__']
+        else:
+            # return dfa if dfb is empty
+            diffs = dfa
+
+        return diffs
 
     @contextmanager
     def _cursor(self):
