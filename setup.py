@@ -81,9 +81,10 @@ setup(
     },
     install_requires=requires,
     extras_require={
-        'pg': ['psycopg2'],
-        'redshift': ['sqlalchemy-redshift', 'psycopg2'],
-        'mysql': ['datatable']
+        "pg": ["psycopg2"],
+        "redshift": ["sqlalchemy-redshift", "psycopg2"],
+        "mysql": ["datatable"],
+        "v2": ["datatable"],
     },
     license='MIT',
     classifiers=(

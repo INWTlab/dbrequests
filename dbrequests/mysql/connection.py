@@ -3,11 +3,13 @@ Implements the backend for MySQL databases. This is mysql and mariadb
 compliant.
 """
 
-from inspect import getfullargspec as getargs
-from contextlib import contextmanager
-from tempfile import NamedTemporaryFile as TmpFile
 import logging
-from datatable import dt, f, str64, Frame, rbind, join
+from contextlib import contextmanager
+from inspect import getfullargspec as getargs
+from tempfile import NamedTemporaryFile as TmpFile
+
+from datatable import Frame, dt, f, join, rbind, str64
+
 from dbrequests import Connection as SuperConnection
 
 
@@ -18,8 +20,7 @@ class Connection(SuperConnection):
         """See mysql.Database.send_delete for documentation."""
         mode_implementation = '_send_delete_{}'.format(mode)
         if hasattr(self, mode_implementation):
-            affected_rows = getattr(
-                self, mode_implementation)(df, table, **params)
+            affected_rows = getattr(self, mode_implementation)(df, table, **params)
         else:
             raise ValueError('{} is not a known mode'.format(mode))
         return affected_rows
@@ -40,14 +41,17 @@ class Connection(SuperConnection):
         if not_in:
             not_in = 'not'
         else:
-            not_in = ''
-        where_stmt = ' and '.join([
-            '`{col}` {not_in} in (select distinct `{col}` from `{tmp_table}`)'.format(
-                col=col, not_in=not_in, tmp_table=tmp_table)
-            for col in cols])
-        delete_stmt = 'delete from `{table}` where {where_stmt};'.format(
-            table=table,
-            where_stmt=where_stmt
+            not_in = ""
+        where_stmt = " and ".join(
+            [
+                "`{col}` {not_in} in (select distinct `{col}` from `{tmp_table}`)".format(
+                    col=col, not_in=not_in, tmp_table=tmp_table
+                )
+                for col in cols
+            ]
+        )
+        delete_stmt = "delete from `{table}` where {where_stmt};".format(
+            table=table, where_stmt=where_stmt
         )
         return self.bulk_query(delete_stmt)
 
