@@ -20,6 +20,7 @@ pymysql = "*"
 pytest = "*"
 importlib-resources = "*"
 isort = "*"
+rope = "*"
 
 [pipenv]
 allow_prereleases = true

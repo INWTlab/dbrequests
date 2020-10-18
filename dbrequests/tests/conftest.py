@@ -1,11 +1,13 @@
 """Shared pytest fixtures.
 """
-import pytest
-import dbrequests
 import os
-from sqlalchemy import create_engine
-from docker import from_env
 import time
+
+import pytest
+from docker import from_env
+from sqlalchemy import create_engine
+
+import dbrequests
 
 sql_dir = os.path.join(os.getcwd(), 'dbrequests/tests/sql')
 sql_dir = os.path.join(os.path.dirname(__file__), 'sql')
@@ -92,7 +94,7 @@ def con(request):
     url, container = run_docker_container()
     engine = create_engine(url)
     try:
-        time.sleep(100)
+        time.sleep(20)
         con = dbrequests.Connection(engine.connect())
         yield con  # providing fixture value for a test case
         # tear_down

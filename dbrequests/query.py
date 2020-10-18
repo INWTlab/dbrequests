@@ -1,6 +1,7 @@
 import os
-import warnings
 import re
+import warnings
+
 
 class Query(object):
     """A Query. Encapsulates SQL code given directly or via a SQL file in a specified directory.
@@ -30,6 +31,10 @@ class Query(object):
         if remove_comments:
             text = self.__remove_comments(text)
         self.text = self.__escape_percentage(text)
+
+    def split(self):
+        queries = self.text.strip(" \n").split(";")
+        return [query.strip(" \n") for query in queries if query != ""]
 
     def __enter__(self):
         return self
