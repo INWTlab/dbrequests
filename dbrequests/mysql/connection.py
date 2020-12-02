@@ -260,13 +260,13 @@ class Connection(SuperConnection):
             # prepare the data
             dfa.key = keys
             dfb = dfb[:, keys]  # we only need the keys to find diffs
-            dfb = dfb[:, f[:].extend({'__a__': 1})]
+            dfb = dfb[:, f[:].extend({'helper123': 1})]
             dfb.key = keys
             # remove the duplicates from dfa
             diffs = dfa[:, :, join(dfb)]
-            del diffs[f.__a__ == 1, :]
-            del diffs[:, '__a__']
-            del dfb[:, '__a__']
+            del diffs[f.helper123 == 1, :]
+            del diffs[:, 'helper123']
+            del dfb[:, 'helper123']
         else:
             # return dfa if dfb is empty
             diffs = dfa
