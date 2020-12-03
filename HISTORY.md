@@ -95,3 +95,7 @@
 ## Version 1.4.6
   - dbrequests.mysql
     - HOTFIX #51: Bug with latest datatable version
+
+## Version 1.5.7
+  - dbrequests.mysql
+    - bugfix of #52
