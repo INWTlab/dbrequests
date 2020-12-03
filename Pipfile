@@ -10,7 +10,7 @@ sqlalchemy = "*"
 
 [dev-packages]
 autopep8 = "*"
-datatable = "*"
+datatable = "<0.11.0"
 docker = "*"
 flake8 = "*"
 ipython = "*"
