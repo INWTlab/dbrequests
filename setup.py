@@ -78,7 +78,7 @@ setup(
         "dbrequests.mysql": ["mysql/tests/*"],
     },
     install_requires=requires,
-    extras_require={"pg": ["psycopg2"], "redshift": ["sqlalchemy-redshift", "psycopg2"], "mysql": ["datatable<0.11.0"]},
+    extras_require={"pg": ["psycopg2"], "redshift": ["sqlalchemy-redshift", "psycopg2"], "mysql": ["datatable"]},
     license="MIT",
     classifiers=(
         "Development Status :: 4 - Beta",
