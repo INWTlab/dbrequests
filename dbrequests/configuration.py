@@ -20,11 +20,11 @@ class Configuration(object):
         # credentials:
         self.url: URL = URL(
             "{}+{}".format(config.pop("dialect"), config.pop("driver")),
-            config.pop("username", config.pop("username", "root")),
+            config.pop("username", config.pop("user", "root")),
             config.pop("password", "root"),
             config.pop("host", "127.0.0.1"),
             config.pop("port"),
-            config.pop("db", config.pop("database", "test")),
+            config.pop("database", config.pop("db", "test")),
         )
 
         # misc parameters:

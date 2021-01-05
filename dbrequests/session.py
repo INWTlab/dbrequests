@@ -1,3 +1,5 @@
+"""A session handles opened connections."""
+
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
@@ -21,6 +23,7 @@ class Session(object):
             connect_args=configuration.connect_args,
         )
         self.connection = self._engine.connect()
+        self.configuration = configuration
 
     def __enter__(self):
         return self
@@ -40,12 +43,10 @@ class Session(object):
         tx = self.connection.transaction()
         try:
             yield self.connection
-            tx.commit()
-        except BaseException as e:
+        except Exception as error:
             tx.rollback()
-            raise e
-        finally:
-            pass
+            raise error
+        tx.commit()
 
     @contextmanager
     def cursor(self):
@@ -53,7 +54,5 @@ class Session(object):
         cursor = self.connection.connection.cursor()
         try:
             yield cursor
-        except BaseException as error:
-            raise error
         finally:
             cursor.close()

@@ -1,7 +1,7 @@
 """
-In this file you find some of the test scenarios we used to develop and
-understand how to retrieve/send medium sized data sets from/to a mysql
-database.
+Her you can find some examples how to use the v2 module of dbrequests. It
+provides mostly the same features as the core implementation but foxuses on an
+extensible approach. This has also changed the user API and workflow.
 """
 #%%
 import random as rnd
@@ -10,11 +10,10 @@ import time
 from contextlib import contextmanager
 
 from datatable import Frame
-from docker import from_env
-
-from dbrequests import mysql
+from dbrequests.mysql.send_data import send_data
 from dbrequests.configuration import Configuration
 from dbrequests.send_query import send_query
+from docker import from_env
 
 # %% Globals
 DOCKER_CONFIG = {
@@ -34,10 +33,10 @@ CREDS = Configuration(
         "password": "root",
         "host": "0.0.0.0",
         "port": 3307,
-        "db": "test",
+        "database": "test",
     }
 )
-NROW = 2000000
+NROW = 200000
 
 
 # %% Helper
@@ -69,8 +68,8 @@ DT = Frame(
     num2=numbers(NROW),
 )
 
-with mysql.Database(str(CREDS.url)) as db:
-    db.send_bulk_query(
+send_query(
+    CREDS,
         """
     CREATE TABLE test.some_table
     (
@@ -87,17 +86,19 @@ with mysql.Database(str(CREDS.url)) as db:
 
 # %% send data
 with stopwatch("send data with pymysql/infile"):
-    with mysql.Database(str(CREDS.url)) as db:
-        db.send_data(DT, "some_table", "truncate")
+    send_data(CREDS, DT, "some_table", "truncate")
 
 
 # %% get data
 with stopwatch("get data"):
     res = send_query(CREDS, "select * from some_table;")
+    res = send_query(CREDS, "set global local_infile=1;")
+
 
 # %%
 CONTAINER.kill()
 CONTAINER.remove()
 CLIENT.close()
 
-# %%
+
+[].append(None) is None
