@@ -107,7 +107,9 @@ def _drop_columns(
 ):
     if with_cols is not None:
         res = send_query(session, "show columns from {table};".format(table=table))
-        cols_to_drop = [name for name in res.Field.to_list() if name not in with_cols]
+        cols_to_drop = [
+            name for name in res["Field"].to_list()[0] if name not in with_cols
+        ]
         if cols_to_drop:
             drop_query = "alter table `{tmp_table}` {cols_to_drop};".format(
                 tmp_table=tmp_table,

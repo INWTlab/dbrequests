@@ -40,5 +40,5 @@ def update(session: Session, df: Frame, table: str, with_temp: bool = True):
     logging.info("sending data with update: {n_rows} rows", n_rows=df.shape[0])
     with temporary_table(session, table, df.names, with_temp) as tmp_table:
         insert(session, df, tmp_table)
-        query = insert_update_statement(df, table, tmp_table)
+        query = insert_update_statement(df.names, table, tmp_table)
         send_query(session, query)

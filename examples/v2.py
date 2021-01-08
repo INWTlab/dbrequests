@@ -11,8 +11,8 @@ from contextlib import contextmanager
 from datatable import Frame
 from docker import from_env
 
-from dbrequests.configuration import Configuration
 from dbrequests.mysql import send_data
+from dbrequests.mysql.configuration import MySQLConfiguration as Configuration
 from dbrequests.send_query import send_query
 from dbrequests.session import Session
 
@@ -89,8 +89,9 @@ with Session(CREDS) as session:
     )
 
 # %% send data
-with stopwatch("send data with pymysql/infile"), Session(CREDS) as session:
-    send_data.truncate(session, DT, "some_table")
+with stopwatch("send data with pymysql/infile") as _, Session(CREDS) as session:
+    # send_data.truncate(session, DT, "some_table")
+    send_data.replace(session, DT, "some_table")
 
 
 # %% get data

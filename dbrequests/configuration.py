@@ -1,10 +1,7 @@
 import json
-import logging
 from copy import deepcopy
 
 from sqlalchemy.engine.url import URL, make_url
-
-from dbrequests.generic import generic
 
 
 class Configuration(object):
@@ -12,10 +9,7 @@ class Configuration(object):
 
     def __init__(self, config: dict):
 
-        config = default_configuration(
-            config.get("dialect", "mysql"),
-            deepcopy(config),
-        )
+        config = deepcopy(config)
 
         # credentials:
         self.url: URL = URL(
@@ -55,30 +49,22 @@ class Configuration(object):
                 )
             )
 
+    @classmethod
+    def from_url(cls, url: str, config=None):
+        """Construct a new configuration from a url."""
+        if config is None:
+            config = {}
+        else:
+            config = deepcopy(config)
+        config["dialect"] = "mysql"
+        config["driver"] = "pymysql"
+        config["port"] = 3306
+        new_instance = cls({"dialect": "unknown", "port": 1})
+        new_instance.url = make_url(url)
+        return new_instance
 
-def config_from_url(url: str) -> Configuration:
-    config = Configuration({"dialect": "unknown"})
-    config.url = make_url(url)
-    return config
-
-
-def config_from_json_file(file_name: str) -> Configuration:
-    with open(file_name) as fname:
-        config = json.load(fname)
-    return Configuration(config)
-
-
-def get_dialect(*args, **kw):
-    return kw.get("dialect", args[0])
-
-
-@generic(get_dialect)
-def default_configuration(dialect: str, config: dict) -> dict:
-    """This is a generic function, dispatching on the first argument as key.
-    You may extend default arguments for a specific dialect by registering a
-    concrete method."""
-    logging.debug(
-        "Entering default_configuration for unknown dialect.",
-        dialect=dialect,
-    )
-    return config
+    @classmethod
+    def from_json_file(cls, file_name: str):
+        with open(file_name) as fname:
+            config = json.load(fname)
+        return cls(config)
