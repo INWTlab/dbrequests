@@ -42,17 +42,17 @@ class Session(object):
         rollback is attempted in case of an error."""
         tx = self.connection.transaction()
         try:
-            yield self.connection
+            yield self
         except Exception as error:
             tx.rollback()
             raise error
         tx.commit()
 
     @contextmanager
-    def cursor(self):
-        """Contextmanager to handle opening and closing cursors."""
-        cursor = self.connection.connection.cursor()
+    def execute(self, query: str):
+        """Contextmanager to handle execute a query and close the result."""
+        dbresult = self.connection.execute(query)
         try:
-            yield cursor
+            yield dbresult
         finally:
-            cursor.close()
+            dbresult.close()

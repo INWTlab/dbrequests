@@ -1,19 +1,20 @@
 """
-Her you can find some examples how to use the v2 module of dbrequests. It
-provides mostly the same features as the core implementation but foxuses on an
-extensible approach. This has also changed the user API and workflow.
+Here you can find some examples how to use the v2 module of dbrequests. It
+provides mostly the same features as the core implementation.
 """
-#%%
+# %%
 import random as rnd
 import string
 import time
 from contextlib import contextmanager
 
 from datatable import Frame
-from dbrequests.mysql.send_data import send_data
-from dbrequests.configuration import Configuration
-from dbrequests.send_query import send_query
 from docker import from_env
+
+from dbrequests.configuration import Configuration
+from dbrequests.mysql import send_data
+from dbrequests.send_query import send_query
+from dbrequests.session import Session
 
 # %% Globals
 DOCKER_CONFIG = {
@@ -68,31 +69,33 @@ DT = Frame(
     num2=numbers(NROW),
 )
 
-send_query(
-    CREDS,
+time.sleep(10)
+
+with Session(CREDS) as session:
+    send_query(
+        session,
         """
-    CREATE TABLE test.some_table
-    (
-        id INTEGER NOT NULL,
-        char1 VARCHAR(8) NOT NULL,
-        char2 VARCHAR(8) NOT NULL,
-        num1 INTEGER NOT NULL,
-        num2 INTEGER NOT NULL
-    )
-    ENGINE=InnoDB
-    DEFAULT CHARSET=utf8mb4;
-    """
+        CREATE TABLE test.some_table
+        (
+            id INTEGER NOT NULL,
+            char1 VARCHAR(8) NOT NULL,
+            char2 VARCHAR(8) NOT NULL,
+            num1 INTEGER NOT NULL,
+            num2 INTEGER NOT NULL
+        )
+        ENGINE=InnoDB
+        DEFAULT CHARSET=utf8mb4;
+        """,
     )
 
 # %% send data
-with stopwatch("send data with pymysql/infile"):
-    send_data(CREDS, DT, "some_table", "truncate")
+with stopwatch("send data with pymysql/infile"), Session(CREDS) as session:
+    send_data.truncate(session, DT, "some_table")
 
 
 # %% get data
-with stopwatch("get data"):
-    res = send_query(CREDS, "select * from some_table;")
-    res = send_query(CREDS, "set global local_infile=1;")
+with stopwatch("get data"), Session(CREDS) as session:
+    res = send_query(session, "select * from some_table;")
 
 
 # %%
@@ -100,5 +103,3 @@ CONTAINER.kill()
 CONTAINER.remove()
 CLIENT.close()
 
-
-[].append(None) is None
