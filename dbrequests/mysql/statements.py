@@ -1,3 +1,6 @@
+from typing import List
+
+
 def infile(file_name: str, col_names: str, table: str, replace: bool = False) -> str:
     if replace:
         replace_str = "replace"
@@ -13,7 +16,7 @@ def infile(file_name: str, col_names: str, table: str, replace: bool = False) ->
     escaped by ''
     lines terminated by '\\n'
     ({columns});
-    """
+    """  # noqa: WPS342
     return stmt.format(
         path=file_name,
         replace=replace_str,
@@ -35,6 +38,23 @@ def insert_update(col_names: str, table: str, tmp_table: str) -> str:
         tmp_table=tmp_table,
         update=_sql_update(col_names),
     )
+
+
+def select_cols(table: str, cols: List[str]) -> str:
+    return "select {cols} from {table};".format(cols=_sql_cols(cols), table=table)
+
+
+def delete_in_delete_col(table: str) -> str:
+    return "delete from `{table}` where `delete` = 1;".format(table=table)
+
+
+def show_primary(table: str) -> str:
+    query = """
+    SHOW INDEXES FROM {table}
+    where key_name = "PRIMARY"
+    and column_name != "row_end";
+    """
+    return query.format(table=table)
 
 
 def _sql_cols(col_names):

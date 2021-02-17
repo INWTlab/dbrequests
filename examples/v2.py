@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from datatable import Frame
 from docker import from_env
 
-from dbrequests.mysql import send_data
+from dbrequests.mysql import send_data, send_diff
 from dbrequests.mysql.configuration import MySQLConfiguration as Configuration
 from dbrequests.send_query import send_query
 from dbrequests.session import Session
@@ -75,23 +75,29 @@ with Session(CREDS) as session:
     send_query(
         session,
         """
-        CREATE TABLE test.some_table
-        (
-            id INTEGER NOT NULL,
-            char1 VARCHAR(8) NOT NULL,
-            char2 VARCHAR(8) NOT NULL,
-            num1 INTEGER NOT NULL,
-            num2 INTEGER NOT NULL
-        )
-        ENGINE=InnoDB
-        DEFAULT CHARSET=utf8mb4;
+        drop table if exists `some_table`;
+        CREATE TABLE `some_table` (
+        `id` int(11) NOT NULL,
+        `char1` varchar(8) NOT NULL,
+        `char2` varchar(8) NOT NULL,
+        `num1` int(11) NOT NULL,
+        `num2` int(11) NOT NULL,
+        `delete` tinyint(1) NULL DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """,
     )
 
 # %% send data
 with stopwatch("send data with pymysql/infile") as _, Session(CREDS) as session:
-    # send_data.truncate(session, DT, "some_table")
+    send_data.truncate(session, DT, "some_table")
+    send_data.insert(session, DT, "some_table")
     send_data.replace(session, DT, "some_table")
+    send_data.update(session, DT, "some_table")
+    send_diff.replace(session, DT, "some_table")
+    send_diff.update(session, DT, "some_table")
+    send_diff.insert(session, DT, "some_table")
+    send_diff.sync(session, DT, "some_table")
 
 
 # %% get data
@@ -103,4 +109,3 @@ with stopwatch("get data"), Session(CREDS) as session:
 CONTAINER.kill()
 CONTAINER.remove()
 CLIENT.close()
-
