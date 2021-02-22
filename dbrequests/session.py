@@ -5,19 +5,23 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 
 from dbrequests.configuration import Configuration
+from dbrequests.send_query import send_query as sendquery
 
 
 class Session(object):
-    """This is a thin wrapper around connections opened by sqlalchemy. It
-    handels opening and closing; preferrably as contextmanager. A connection is
-    opened upon initialization.
-
-    - configuration: (Configuration) a dict with two member:
-        - url: a sqlalchemy url
-        - connect_args: a dictionary with arguments passed on to create_engine.
-    """
+    """A session represents a connection to a database."""
 
     def __init__(self, configuration: Configuration):
+        """
+        Create a session object to handle open connections.
+
+        Args:
+            configuration (Configuration): see docs of Configuration class.
+
+        This is a thin wrapper around connections opened by sqlalchemy. It
+        handels opening and closing of connections; preferrably as
+        contextmanager. A connection is opened upon initialization.
+        """
         self._engine = create_engine(
             configuration.url,
             connect_args=configuration.connect_args,
@@ -25,10 +29,10 @@ class Session(object):
         self.connection = self._engine.connect()
         self.configuration = configuration
 
-    def __enter__(self):
+    def __enter__(self):  # noqa: D105
         return self
 
-    def __exit__(self, exc, val, traceback):
+    def __exit__(self, exc, val, traceback):  # noqa: WPS110,D105
         self.close()
 
     def close(self):
@@ -38,8 +42,16 @@ class Session(object):
 
     @contextmanager
     def transaction(self):
-        """Contextmanager to handle opening and closing transactions. A
-        rollback is attempted in case of an error."""
+        """
+        Contextmanager to handle opening and closing transactions.
+
+        Raises:
+            Exception: In case of an error, rollback is attempted and exception
+                is raised.
+
+        Yields:
+            A session with started transaction.
+        """
         tx = self.connection.transaction()
         try:
             yield self
@@ -50,9 +62,20 @@ class Session(object):
 
     @contextmanager
     def execute(self, query: str):
-        """Contextmanager to handle execute a query and close the result."""
+        """
+        Contextmanager to execute a sql statement.
+
+        Args:
+            query (str): a sql query as string.
+
+        Yields:
+            A result object closed by the contexmanager.
+        """
         dbresult = self.connection.execute(query)
         try:
             yield dbresult
         finally:
             dbresult.close()
+
+    # For convenience we offer to call send_query as a member of this class.
+    query_query = sendquery

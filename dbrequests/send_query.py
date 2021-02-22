@@ -1,18 +1,7 @@
 from datatable import Frame, rbind
 
-from dbrequests.configuration import Configuration
 from dbrequests.query import Query
 from dbrequests.session import Session
-
-# def send_query(
-#     configuration: Configuration,
-#     query: str,
-#     **query_args,
-# ) -> Frame:
-#     """Send a query to a database and collect results."""
-#     with Session(configuration) as session:
-#         res = _send_query_in_session(session, query, **query_args)
-#     return res
 
 
 def send_query(
@@ -20,6 +9,15 @@ def send_query(
     query: str,
     **query_args,
 ) -> Frame:
+    """
+    Send a query to a database and collect result set.
+
+    :param session: Session object
+    :param query: String can be a filename or a query
+        - a sql query as string
+        - a file-path as string
+        - the name of a file as string (with or without .sql)
+    """
     query_args = dict(session.configuration.query_args.copy(), **query_args)
     queries = Query(query, **query_args).split()
     res = Frame()
@@ -28,7 +26,7 @@ def send_query(
     return res
 
 
-def _send_single_query(session: Session, query: str, chunksize: int) -> Frame:
+def _send_single_query(session, query: str, chunksize: int) -> Frame:
     res = []
     for frame in _collect_query_results(session, query, chunksize):
         res.append(frame)
@@ -36,16 +34,12 @@ def _send_single_query(session: Session, query: str, chunksize: int) -> Frame:
 
 
 def _collect_query_results(
-    session: Session,
+    session,
     query: str,
     chunksize: int,
 ) -> Frame:
     with session.execute(query) as dbresult:
-        if not dbresult.returns_rows:
-            # In case of create, update, insert, set statements we return an
-            # empty frame:
-            yield Frame()
-        else:
+        if dbresult.returns_rows:
             fields = [field[0] for field in dbresult.cursor.description]
             while True:
                 frame = Frame(dbresult.cursor.fetchmany(chunksize))
@@ -55,3 +49,7 @@ def _collect_query_results(
                 else:
                     frame.names = fields
                     yield frame
+        else:
+            # In case of create, update, insert, set statements we return an
+            # empty frame:
+            yield Frame()

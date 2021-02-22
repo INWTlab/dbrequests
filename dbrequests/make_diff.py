@@ -5,7 +5,12 @@ from datatable import Frame, f, join
 
 def make_diff(dfa: Frame, dfb: Frame, keys: Optional[List[str]] = None):
     """
-    Finds the rows in dfa that are not in dfb.
+    Find the rows in dfa that are not in dfb.
+
+    :param dfa: (datatable.Frame)
+    :param dfb: (datatable.Frame)
+    :param keys: (List[str]) names of columns identifying unique rows in frame.
+        None is interpreted as all columns.
 
     Returns:
         - Frame: with rows unique in dfa.
@@ -20,7 +25,7 @@ def make_diff(dfa: Frame, dfb: Frame, keys: Optional[List[str]] = None):
         dfb.key = keys
         # remove the duplicates from dfa
         diffs = dfa[:, :, join(dfb)]
-        diffs = diffs[f._a_ == 1, :]  # noqa: W0212 (access of _var)
+        diffs = diffs[f._a_ == 1, :]  # noqa: W0212,WPS437 (access of _var)
         diffs = _drop_col(diffs, "_a_")
         dfb = _drop_col(dfb, "_a_")
     else:

@@ -22,7 +22,6 @@ class Configuration(object):
         )
 
         # misc parameters:
-        self.mode: str = config.pop("mode", self.url.get_dialect())
         self.chunksize: int = config.pop("chunksize", 100000)  # noqa: WPS432
         # query arguments
         self.query_args: dict = config.pop("query_args", {})
@@ -56,12 +55,15 @@ class Configuration(object):
             config = {}
         else:
             config = deepcopy(config)
-        config["dialect"] = "mysql"
-        config["driver"] = "pymysql"
-        config["port"] = 3306
-        new_instance = cls({"dialect": "unknown", "port": 1})
-        new_instance.url = make_url(url)
-        return new_instance
+        surl = make_url(url)
+        config.update(surl.translate_connect_args())
+        config.update(
+            {
+                "dialect": surl.get_backend_name(),
+                "driver": surl.get_driver_name(),
+            }
+        )
+        return cls(config)
 
     @classmethod
     def from_json_file(cls, file_name: str):
