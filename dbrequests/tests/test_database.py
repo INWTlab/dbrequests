@@ -1,8 +1,9 @@
-from dbrequests import Database
-import pandas as pd
-import pytest
-import pymysql
 import os
+
+import pandas as pd
+import pymysql
+import pytest
+from dbrequests import Database
 
 # creds = {
 #     'user': 'testuser',
@@ -116,9 +117,9 @@ class TestDatabase:
                               'name': ['Cookie'],
                               'owner': ['Casey'],
                               'birth': ['2013-11-13']}) == df).all(axis=None)
-        with pytest.warns(SyntaxWarning):
-            df = db.send_query(
-                "SELECT * FROM cats WHERE owner LIKE 'Cas%';")
+        with pytest.raises(ValueError):
+            with pytest.warns(SyntaxWarning):
+                df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Cas%';")
 
     def test_remove_comments(self, db):
         df = db.send_query("""
