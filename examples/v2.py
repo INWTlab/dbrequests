@@ -88,6 +88,43 @@ with Session(CREDS) as session:
         """,
     )
 
+# %%
+
+
+class my_class(Session):
+    send_data = send_data
+    send_query = send_query
+
+
+session = my_class(CREDS)
+
+session.send_query("select 1 as x;")
+session.send_data.replace()
+
+
+class my_database(Session):
+    def __init__(self, *args, **kw):
+        super().__init__(Configuration(*args, **kw))
+
+tmp = {'a': 'asd'}
+tmp.update({'a': 'as'})
+
+
+
+
+db = my_database(
+    {
+        "dialect": "mysql",
+        "driver": "mysqldb",
+        "user": "root",
+        "password": "root",
+        "host": "0.0.0.0",
+        "port": 3307,
+        "database": "test",
+    }
+)
+
+
 # %% send data
 with stopwatch("send data with pymysql/infile") as _, Session(CREDS) as session:
     send_data.truncate(session, DT, "some_table")
