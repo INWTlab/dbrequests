@@ -1,5 +1,4 @@
 import os
-import sys
 
 import pandas as pd
 import pytest
@@ -117,14 +116,6 @@ class TestDatabase:
                               'name': ['Cookie'],
                               'owner': ['Casey'],
                               'birth': ['2013-11-13']}) == df).all(axis=None)
-
-        if sys.version >= "3.7":
-            with pytest.warns(SyntaxWarning):
-                df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Cas%';")
-        else:
-            with pytest.raises(ValueError):
-                with pytest.warns(SyntaxWarning):
-                    df = db.send_query("SELECT * FROM cats WHERE owner LIKE 'Cas%';")
 
     def test_remove_comments(self, db):
         df = db.send_query("""
