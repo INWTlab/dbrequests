@@ -4,6 +4,7 @@ compliant.
 """
 
 import logging
+import re
 from contextlib import contextmanager
 from inspect import getfullargspec as getargs
 
@@ -157,8 +158,12 @@ class Connection(SuperConnection):
         df.to_csv(path=file, header=False)
 
     def _infile_csv(self, file, df, table, replace=""):
-        self.bulk_query(
-            """
+        # On Windows paths are denoted by '\\'. A backslash in the sql statement
+        # has to be escaped; so we have to escape both of them -> 4 backslashes.
+        # In the regular expression every backslash, of those 4, needs to be
+        # escaped, leading to 8. This should be without effect on Linux.
+        file = re.sub("\\\\", "\\\\\\\\", file)
+        query = """
         load data local infile '{path}'
         {replace}
         into table `{table}`
@@ -173,7 +178,7 @@ class Connection(SuperConnection):
                 table=table,
                 columns=self._sql_cols(df.names),
             )
-        )
+        self.bulk_query(query)
 
     def _insert_update(self, df, table, tmp_table):
         self.bulk_query(
