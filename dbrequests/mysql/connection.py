@@ -6,11 +6,10 @@ compliant.
 import logging
 from contextlib import contextmanager
 from inspect import getfullargspec as getargs
-from tempfile import NamedTemporaryFile as TmpFile
 
 from datatable import Frame, dt, f, join, rbind, str64
-
 from dbrequests import Connection as SuperConnection
+from dbrequests.temp_file import temp_file
 
 
 class Connection(SuperConnection):
@@ -88,13 +87,13 @@ class Connection(SuperConnection):
 
     def _send_data_insert(self, df, table):
         logging.info(f"sending data with insert: {df.shape[0]} rows")
-        with TmpFile(mode="w", newline="") as tf:
+        with temp_file() as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table)
 
     def _send_data_replace(self, df, table):
         logging.info(f"sending data with replace: {df.shape[0]} rows")
-        with TmpFile(mode="w", newline="") as tf:
+        with temp_file() as tf:
             self._write_csv(df, tf)
             self._infile_csv(tf, df, table, replace="replace")
 
@@ -155,7 +154,7 @@ class Connection(SuperConnection):
             return None
         df = df[:, f[:].remove(f[:]).extend(str64(f[:]))][:, df.names]
         df.replace(None, "NULL")
-        df.to_csv(path=file.name, header=False)
+        df.to_csv(path=file, header=False)
 
     def _infile_csv(self, file, df, table, replace=""):
         self.bulk_query(
@@ -169,7 +168,10 @@ class Connection(SuperConnection):
         escaped by ''
         lines terminated by '\\n'
         ({columns});""".format(
-                path=file.name, replace=replace, table=table, columns=self._sql_cols(df.names)
+                path=file,
+                replace=replace,
+                table=table,
+                columns=self._sql_cols(df.names),
             )
         )
 
