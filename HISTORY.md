@@ -99,3 +99,8 @@
 ## Version 1.4.7
   - dbrequests.mysql
     - bugfix of #52
+
+## Version 1.4.8
+  - dbrequests.mysql
+    - fix for creating temporary files on Windows.
+
