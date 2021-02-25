@@ -27,15 +27,13 @@ DOCKER_CONFIG = {
 CLIENT = from_env()
 CONTAINER = CLIENT.containers.run(**DOCKER_CONFIG)
 CREDS = Configuration(
-    {
-        "dialect": "mysql",
-        "driver": "mysqldb",
-        "user": "root",
-        "password": "root",
-        "host": "0.0.0.0",
-        "port": 3307,
-        "database": "test",
-    }
+    dialect="mysql",
+    driver="mysqldb",
+    username="root",
+    password="root",
+    host="127.0.0.1",
+    port=3307,
+    database="test",
 )
 NROW = 200000
 

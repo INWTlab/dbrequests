@@ -1,72 +1,105 @@
 import json
-from copy import deepcopy
 
 from sqlalchemy.engine.url import URL, make_url
 
 
 class Configuration(object):
-    """Deconstruct and prepare a configuration."""
+    """
+    A configuration stores all information needed to connect and query a database.
 
-    def __init__(self, config: dict):
+    Class Methods:
+        from_url: Construct a configuration from sqlalchemy url.
+        from_json_file: Construct a configuration from json file.
 
-        config = deepcopy(config)
+    """
 
-        # credentials:
+    def __init__(  # noqa: WPS211
+        self,
+        dialect: str,
+        driver: str,
+        username: str,
+        password: str,
+        host: str,
+        port: int,
+        database: str,
+        chunksize: int = 1000000,
+        sql_dir: str = "./sql",
+        sql_remove_comments: bool = True,
+        sql_escape_percentage: bool = True,
+        connect_args: dict = None,
+    ):
+        """
+        Initialize a new configuration.
+
+        Args:
+            dialect (str): The sql dialect, e.g. mysql.
+            driver (str): The sql driver, e.g. pymysql.
+            username (str): The username used when connecting.
+            password (str): The password used when connecting.
+            host (str): The host to connect to.
+            port (int): The port to connect to.
+            database (str): The database / schema used by default in queries.
+            chunksize (int): The number of rows to collect when fetching a result set.
+            sql_dir (str): The folder in which to look for sql files.
+            sql_remove_comments (bool): Whether to remove comments when parsing queries.
+            sql_escape_percentage (bool): Whether to escape percentage signs when parsing queries.
+            connect_args (dict): Additional argument passed to sqlalchemy.create_engine.
+
+        Server credentials are used to construct a sqlalchemy URL.
+
+        """
         self.url: URL = URL(
-            "{}+{}".format(config.pop("dialect"), config.pop("driver")),
-            config.pop("username", config.pop("user", "root")),
-            config.pop("password", "root"),
-            config.pop("host", "127.0.0.1"),
-            config.pop("port"),
-            config.pop("database", config.pop("db", "test")),
+            f"{dialect}+{driver}",
+            username,
+            password,
+            host,
+            port,
+            database,
         )
-
-        # misc parameters:
-        self.chunksize: int = config.pop("chunksize", 100000)  # noqa: WPS432
-        # query arguments
-        self.query_args: dict = config.pop("query_args", {})
-        self.query_args["sql_dir"] = self.query_args.get("sql_dir", "./sql")
-        self.query_args["remove_comments"] = self.query_args.get(
-            "remove_comments",
-            True,
-        )
-        self.query_args["escape_percentage"] = self.query_args.get(
-            "escape_percentage",
-            False,
-        )
-
-        # connect_args:
-        self.connect_args: dict = config.pop("connect_args", {})
-
-        # Prevent any configuration items ending up in the void:
-        if config:
-            raise ValueError(
-                (
-                    "Can't handle the following configuration items: {}".format(
-                        ", ".join([name for name, _ in config.items()])
-                    )
-                )
-            )
+        self.chunksize = chunksize
+        self.query_args: dict = {
+            "sql_dir": sql_dir,
+            "remove_comments": sql_remove_comments,
+            "escape_percentage": sql_escape_percentage,
+        }
+        self.connect_args = connect_args
 
     @classmethod
-    def from_url(cls, url: str, config=None):
-        """Construct a new configuration from a url."""
-        if config is None:
-            config = {}
-        else:
-            config = deepcopy(config)
+    def from_url(cls, url: str, **kwargs):
+        """
+        Construct a new configuration from a url.
+
+        Args:
+            url (str): A sqlalchemy url.
+            kwargs: Arguments passed to configuration.
+
+        Returns:
+            A configuration.
+
+        """
         surl = make_url(url)
-        config.update(surl.translate_connect_args())
-        config.update(
-            {
-                "dialect": surl.get_backend_name(),
-                "driver": surl.get_driver_name(),
-            }
+        return cls(
+            dialect=surl.get_backend_name(),
+            driver=surl.get_driver_name(),
+            **surl.translate_connect_args(),
+            **kwargs,
         )
-        return cls(config)
 
     @classmethod
-    def from_json_file(cls, file_name: str):
+    def from_json_file(cls, file_name: str, element: str = None):
+        """
+        Construct a new configuration from a json file.
+
+        Args:
+            file_name (str): A file name.
+            element (str): The element in the json file to be used as configuration.
+
+        Returns:
+            A configuration.
+
+        """
         with open(file_name) as fname:
             config = json.load(fname)
-        return cls(config)
+        if element:
+            config = config[element]
+        return cls(**config)

@@ -1,7 +1,9 @@
+import re
 from typing import List
 
 
 def infile(file_name: str, col_names: str, table: str, replace: bool = False) -> str:
+    file_name = re.sub("\\\\", "\\\\\\\\", file_name)
     if replace:
         replace_str = "replace"
     else:

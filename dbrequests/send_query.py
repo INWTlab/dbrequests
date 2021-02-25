@@ -1,11 +1,10 @@
 from datatable import Frame, rbind
 
 from dbrequests.query import Query
-from dbrequests.session import Session
 
 
 def send_query(
-    session: Session,
+    session,
     query: str,
     **query_args,
 ) -> Frame:
