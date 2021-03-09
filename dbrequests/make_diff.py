@@ -7,13 +7,14 @@ def make_diff(dfa: Frame, dfb: Frame, keys: Optional[List[str]] = None):
     """
     Find the rows in dfa that are not in dfb.
 
-    :param dfa: (datatable.Frame)
-    :param dfb: (datatable.Frame)
-    :param keys: (List[str]) names of columns identifying unique rows in frame.
-        None is interpreted as all columns.
+    Args:
+        dfa (Frame): A data frame.
+        dfb (Frame): A data frame.
+        keys (List[str]): names of columns identifying unique rows in frame.
 
     Returns:
-        - Frame: with rows unique in dfa.
+        A frame with rows from dfa that can not be found in dfb.
+
     """
     if keys is None:
         keys = dfa.names

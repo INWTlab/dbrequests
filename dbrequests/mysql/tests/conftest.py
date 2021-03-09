@@ -1,12 +1,11 @@
 """Configures the test environment. Some helper functions and fixtures."""
 import time
 
+import pytest
 from docker import from_env
 from docker.errors import APIError
 
-import pytest
 from dbrequests.mysql import Database
-
 
 CREDS = {
     'user': 'root',
@@ -102,11 +101,11 @@ def set_up_cats(db):
     db.send_bulk_query('drop table if exists `hist_cats`;')
     db.send_bulk_query('create table `hist_cats` like cats;')
     db.send_bulk_query(
-        """alter table hist_cats add `delete` int(1) default NULL 
+        """alter table hist_cats add `delete` int(1) default NULL
         invisible null;""")
     db.send_bulk_query('alter table `hist_cats` add system versioning;')
     db.send_bulk_query(
-        """alter table hist_cats partition by SYSTEM_TIME(partition p_hist 
+        """alter table hist_cats partition by SYSTEM_TIME(partition p_hist
         history, partition p_cur current)""")
 
 
@@ -147,6 +146,7 @@ def set_up_membership(db):
 def container_controller(request):
     """Startup database fixture."""
     container = run_docker_container()
+    time.sleep(15)
     try:
         yield container
     except BaseException as error:

@@ -2,12 +2,14 @@
 These are some of the tests to build the 'send only diffs' feature.
 """
 
-from datatable import f, Frame
+import random as rnd
 import string
 import time
-import random as rnd
+
+from datatable import Frame, f
 from docker import from_env
 
+import dbrequests as dbr
 import dbrequests.mysql as mysql
 
 # Globals
@@ -21,7 +23,7 @@ DOCKER_CONFIG = {
 CLIENT = from_env()
 CONTAINER = CLIENT.containers.run(**DOCKER_CONFIG)
 URL = 'mysql+mysqldb://root:root@0.0.0.0:3307/test'
-NROW = 20000000
+NROW = 200
 
 
 # Helper
@@ -57,6 +59,12 @@ DF = Frame(
     char2=chars(NROW),
     num1=numbers(NROW),
     num2=numbers(NROW)
+)
+
+db = mysql.Database(URL)
+
+db.send_query(
+    dbr.Query("query.sql", val="'aa'", sql_dir="../").text
 )
 
 with mysql.Database(URL) as db:

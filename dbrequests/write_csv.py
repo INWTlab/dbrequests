@@ -1,8 +1,17 @@
 from datatable import Frame, f, str64
 
 
-def write_csv(df: Frame, file_name) -> None:
-    """Write a Frame as csv."""
+def write_csv(df: Frame, file_name: str) -> None:
+    """
+    Write a Frame as csv.
+
+    Args:
+        df (Frame): A data frame.
+        file_name (str): The name of the file.
+
+    Returns:
+        None.
+    """
     # Before writing, we need to convert all columns to strings for two
     # reasons:
     # - We have to convert any obj64 types to str64: Frame.to_csv can't

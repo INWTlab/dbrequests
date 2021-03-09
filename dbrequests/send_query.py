@@ -11,11 +11,16 @@ def send_query(
     """
     Send a query to a database and collect result set.
 
-    :param session: Session object
-    :param query: String can be a filename or a query
-        - a sql query as string
-        - a file-path as string
-        - the name of a file as string (with or without .sql)
+    Args:
+        session (Session): Session object.
+        query (str): String can be a filename or a query.
+        query_args: Arguments passed to query.
+
+    Returns:
+        A frame with the result set. In case the sql statement comprises more
+        than one result set, all are collected but only the last one is
+        returned.
+
     """
     query_args = dict(session.configuration.query_args.copy(), **query_args)
     queries = Query(query, **query_args).split()

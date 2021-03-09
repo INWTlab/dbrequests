@@ -38,17 +38,15 @@ class Configuration(object):
             password (str): The password used when connecting.
             host (str): The host to connect to.
             port (int): The port to connect to.
-            database (str): The database / schema used by default in queries.
+            database (str): The database / schema to connect to.
             chunksize (int): The number of rows to collect when fetching a result set.
             sql_dir (str): The folder in which to look for sql files.
             sql_remove_comments (bool): Whether to remove comments when parsing queries.
             sql_escape_percentage (bool): Whether to escape percentage signs when parsing queries.
             connect_args (dict): Additional argument passed to sqlalchemy.create_engine.
 
-        Server credentials are used to construct a sqlalchemy URL.
-
         """
-        self.url: URL = URL(
+        self.url: URL = URL.create(
             f"{dialect}+{driver}",
             username,
             password,

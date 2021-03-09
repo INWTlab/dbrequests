@@ -1,5 +1,3 @@
-"""A session handles opened connections."""
-
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
@@ -43,10 +41,10 @@ class Session(object):
     @contextmanager
     def transaction(self):
         """
-        Contextmanager to handle opening and closing transactions.
+        Contextmanager to handle starting and commiting transactions.
 
         Raises:
-            Exception: In case of an error, rollback is attempted and exception
+            Exception: In case of any error, rollback is attempted and exception
                 is raised.
 
         Yields:
@@ -63,7 +61,7 @@ class Session(object):
     @contextmanager
     def execute(self, query: str):
         """
-        Contextmanager to execute a sql statement.
+        Contextmanager to execute a sql statement and close the result.
 
         Args:
             query (str): a sql query as string.
