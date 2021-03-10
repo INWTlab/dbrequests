@@ -86,3 +86,21 @@
       deprecated rows.
     - new mode for delete data: in_delete_col: mark rows to delete, then delete.
     - bugfix for temporary tables: now properly removes tables.
+
+## Version 1.4.3-5
+  - dbrequests.mysql
+    - More stable and reliable Version of sync_diffs mode for sending data.
+      Respects scarce resources on the mysql server.
+
+## Version 1.4.6
+  - dbrequests.mysql
+    - HOTFIX #51: Bug with latest datatable version
+
+## Version 1.4.7
+  - dbrequests.mysql
+    - bugfix of #52
+
+## Version 1.4.8
+  - dbrequests.mysql
+    - fix for creating temporary files on Windows.
+

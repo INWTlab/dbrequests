@@ -1,7 +1,6 @@
 import os
 
 import pandas as pd
-import pymysql
 import pytest
 
 from dbrequests import Database
