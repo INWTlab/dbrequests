@@ -10,6 +10,7 @@ pipeline {
             // copy credentials to the right folder
             // install package to virtualenv
                 sh '''
+                pipenv lock
                 pipenv install --dev
                 '''
             }
@@ -18,6 +19,7 @@ pipeline {
             // pytest tests within the virtualenv
             steps {
                 sh '''
+                pipenv lock
                 pipenv run pytest --verbose
                 '''
             }

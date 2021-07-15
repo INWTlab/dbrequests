@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         # If anybody figures out how to setup the other relevant OSs, we should
         # test against them: [MacOS, Ubuntu, Windows]
         os: [Ubuntu]
